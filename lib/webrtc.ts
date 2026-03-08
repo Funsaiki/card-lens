@@ -78,12 +78,14 @@ export async function sendSignal(
 
 export async function pollSignal(
   sessionId: string,
-  type: string
-): Promise<unknown | null> {
+  type: string,
+  cursor?: number
+): Promise<{ data: unknown | null; cursor?: number }> {
+  const cursorParam = cursor != null ? `&cursor=${cursor}` : "";
   const res = await fetch(
-    `${SIGNAL_BASE}?sessionId=${sessionId}&type=${type}`
+    `${SIGNAL_BASE}?sessionId=${sessionId}&type=${type}${cursorParam}`
   );
-  if (!res.ok) return null;
+  if (!res.ok) return { data: null };
   const json = await res.json();
-  return json.data ?? null;
+  return { data: json.data ?? null, cursor: json.cursor };
 }

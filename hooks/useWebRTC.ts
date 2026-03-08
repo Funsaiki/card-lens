@@ -39,6 +39,7 @@ export function useWebRTC({ role, sessionId: externalSessionId, onStream }: UseW
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iceCandidateBuffer = useRef<RTCIceCandidateInit[]>([]);
   const hasAnswerRef = useRef(false);
+  const iceCursorRef = useRef(0);
 
   const cleanup = useCallback(() => {
     log(role, "cleanup");
@@ -51,6 +52,7 @@ export function useWebRTC({ role, sessionId: externalSessionId, onStream }: UseW
       pcRef.current = null;
     }
     hasAnswerRef.current = false;
+    iceCursorRef.current = 0;
   }, [role]);
 
   useEffect(() => {
@@ -115,10 +117,8 @@ export function useWebRTC({ role, sessionId: externalSessionId, onStream }: UseW
       try {
         // Check for answer (only once)
         if (!hasAnswerRef.current) {
-          const answer = (await pollSignal(
-            sessionId,
-            "answer"
-          )) as RTCSessionDescriptionInit | null;
+          const answerResult = await pollSignal(sessionId, "answer");
+          const answer = answerResult.data as RTCSessionDescriptionInit | null;
 
           if (answer && answer.type) {
             log(role, "got answer! signalingState:", currentPc.signalingState);
@@ -144,10 +144,13 @@ export function useWebRTC({ role, sessionId: externalSessionId, onStream }: UseW
         }
 
         // Check for ICE candidates from phone
-        const candidates = (await pollSignal(
+        const iceResult = await pollSignal(
           sessionId,
-          "ice-candidate-answer"
-        )) as RTCIceCandidateInit[] | null;
+          "ice-candidate-answer",
+          iceCursorRef.current
+        );
+        if (iceResult.cursor != null) iceCursorRef.current = iceResult.cursor;
+        const candidates = iceResult.data as RTCIceCandidateInit[] | null;
 
         if (candidates && Array.isArray(candidates) && candidates.length > 0) {
           log(role, "got", candidates.length, "ICE candidates from phone");
@@ -180,10 +183,8 @@ export function useWebRTC({ role, sessionId: externalSessionId, onStream }: UseW
       // Poll for the offer
       let offer: RTCSessionDescriptionInit | null = null;
       for (let i = 0; i < 30; i++) {
-        offer = (await pollSignal(
-          sessionId,
-          "offer"
-        )) as RTCSessionDescriptionInit | null;
+        const offerResult = await pollSignal(sessionId, "offer");
+        offer = offerResult.data as RTCSessionDescriptionInit | null;
         if (offer && offer.type) {
           log(role, "got offer on attempt", i + 1);
           break;
@@ -262,15 +263,19 @@ export function useWebRTC({ role, sessionId: externalSessionId, onStream }: UseW
       }
 
       // Poll for ICE candidates from PC
+      let senderIceCursor = 0;
       pollingRef.current = setInterval(async () => {
         const currentPc = pcRef.current;
         if (!currentPc) return;
 
         try {
-          const candidates = (await pollSignal(
+          const iceResult = await pollSignal(
             sessionId,
-            "ice-candidate-offer"
-          )) as RTCIceCandidateInit[] | null;
+            "ice-candidate-offer",
+            senderIceCursor
+          );
+          if (iceResult.cursor != null) senderIceCursor = iceResult.cursor;
+          const candidates = iceResult.data as RTCIceCandidateInit[] | null;
 
           if (candidates && Array.isArray(candidates) && candidates.length > 0) {
             log(role, "got", candidates.length, "ICE candidates from PC");
