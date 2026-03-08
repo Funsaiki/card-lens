@@ -65,7 +65,7 @@ function ScanContent() {
 
   // Filter embeddings for the current game
   const gameEmbeddings = useMemo(
-    () => embeddingDatabase.filter((e) => !e.game || e.game === game),
+    () => embeddingDatabase.filter((e) => e.game === game),
     [embeddingDatabase, game]
   );
 
