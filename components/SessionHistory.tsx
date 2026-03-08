@@ -42,7 +42,8 @@ export default function SessionHistory({
           <button
             key={`${entry.card.id}-${entry.timestamp}`}
             onClick={() => onSelect(entry)}
-            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-zinc-800/50 transition-colors text-left border-b border-zinc-800 last:border-b-0"
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-zinc-800/50 transition-all text-left border-b border-zinc-800 last:border-b-0 animate-slide-in-right hover:translate-x-1"
+            style={{ animationDelay: `${index * 50}ms`, animationFillMode: "both" }}
           >
             {/* Thumbnail */}
             <div className="relative w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-zinc-800">

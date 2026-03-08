@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, Suspense } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import VideoFeed from "@/components/VideoFeed";
@@ -54,6 +54,7 @@ function ScanContent() {
     searchAndIndex,
     addToHistory,
     addToEmbeddingDatabase,
+    removeSet,
     clearHistory,
   } = useCardRecognition({
     game,
@@ -63,6 +64,15 @@ function ScanContent() {
   });
 
   const indexedCount = embeddingDatabase.length;
+
+  // Compute indexed sets with card counts
+  const indexedSets = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const entry of embeddingDatabase) {
+      counts.set(entry.set, (counts.get(entry.set) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).map(([setId, count]) => ({ setId, count }));
+  }, [embeddingDatabase]);
 
   const handleIndexComplete = useCallback(
     (entries: CardEmbeddingEntry[]) => {
@@ -162,6 +172,7 @@ function ScanContent() {
     pokemon: "Pokemon",
     magic: "MTG",
     yugioh: "Yu-Gi-Oh!",
+    hololive: "Hololive",
   }[game];
 
   const tabs: { id: SidebarTab; label: string; badge?: string }[] = [
@@ -289,7 +300,7 @@ function ScanContent() {
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <aside className="w-72 xl:w-80 border-l border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
+          <aside className="w-72 xl:w-80 border-l border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0 animate-slide-in-right">
             {/* Tabs — compact */}
             <div className="flex border-b border-zinc-800">
               {tabs.map((tab) => (
@@ -319,6 +330,8 @@ function ScanContent() {
                   game={game}
                   onIndexComplete={handleIndexComplete}
                   indexedCount={indexedCount}
+                  indexedSets={indexedSets}
+                  onRemoveSet={removeSet}
                   dbLoading={dbLoading}
                 />
               ) : sidebarTab === "info" ? (

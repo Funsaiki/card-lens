@@ -40,6 +40,19 @@ const GAMES = [
       </svg>
     ),
   },
+  {
+    id: "hololive",
+    name: "Hololive OCG",
+    description: "Scan Hololive cards",
+    color: "from-cyan-400 to-blue-500",
+    bgHover: "hover:border-cyan-400/50",
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M12 2L2 12l10 10 10-10L12 2z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ),
+  },
 ];
 
 export default function Home() {
@@ -47,7 +60,7 @@ export default function Home() {
     <main className="min-h-screen flex flex-col">
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-12 animate-fade-in-up">
           <h1 className="text-5xl sm:text-6xl font-bold tracking-tight mb-4">
             <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
               Card Lens
@@ -60,12 +73,12 @@ export default function Home() {
         </div>
 
         {/* Game selection */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-4xl">
           {GAMES.map((game) => (
             <Link
               key={game.id}
               href={`/scan?game=${game.id}`}
-              className={`group relative flex flex-col items-center gap-4 p-8 rounded-2xl border border-zinc-800 bg-zinc-900/50 transition-all duration-300 ${game.bgHover} hover:bg-zinc-900`}
+              className={`group relative flex flex-col items-center gap-4 p-8 rounded-2xl border border-zinc-800 bg-zinc-900/50 transition-all duration-300 ${game.bgHover} hover:bg-zinc-900 hover:scale-[1.03] hover:-translate-y-1`}
             >
               {/* Gradient glow on hover */}
               <div

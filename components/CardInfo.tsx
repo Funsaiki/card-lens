@@ -2,6 +2,7 @@
 
 import { CardData } from "@/types";
 import Image from "next/image";
+import PriceChart from "./PriceChart";
 
 interface CardInfoProps {
   card: CardData | null;
@@ -36,13 +37,14 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
     pokemon: "Pokemon TCG",
     magic: "Magic: The Gathering",
     yugioh: "Yu-Gi-Oh!",
+    hololive: "Hololive OCG",
   }[card.game];
 
   return (
-    <div className="flex flex-col gap-4 p-4 overflow-y-auto">
+    <div className="flex flex-col gap-4 p-4 overflow-y-auto animate-fade-in-up">
       {/* Card image */}
       {card.imageUrl && (
-        <div className="relative aspect-[2.5/3.5] w-full max-w-[240px] mx-auto rounded-lg overflow-hidden shadow-lg">
+        <div className="relative aspect-[2.5/3.5] w-full max-w-[240px] mx-auto rounded-lg overflow-hidden shadow-lg animate-scale-in">
           <Image
             src={card.imageUrl}
             alt={card.name}
@@ -68,7 +70,7 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
           </div>
           <div className="w-full bg-zinc-700 rounded-full h-1.5">
             <div
-              className="bg-green-500 h-1.5 rounded-full transition-all"
+              className="bg-green-500 h-1.5 rounded-full transition-all animate-grow-width"
               style={{ width: `${confidence}%` }}
             />
           </div>
@@ -77,56 +79,18 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
 
       {/* Set and rarity */}
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="bg-zinc-800 rounded-lg p-2">
+        <div className="bg-zinc-800 rounded-lg p-2 hover:bg-zinc-750 transition-colors">
           <p className="text-zinc-500 text-xs">Set</p>
           <p className="text-zinc-200 truncate">{card.set}</p>
         </div>
-        <div className="bg-zinc-800 rounded-lg p-2">
+        <div className="bg-zinc-800 rounded-lg p-2 hover:bg-zinc-750 transition-colors">
           <p className="text-zinc-500 text-xs">Rarity</p>
           <p className="text-zinc-200 truncate">{card.rarity}</p>
         </div>
       </div>
 
-      {/* Prices — multi-marketplace */}
-      {card.pricing && (
-        <div className="space-y-2">
-          {card.pricing.tcgplayer && (
-            <div className="bg-zinc-800 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-zinc-500 text-xs font-medium">TCGPlayer</p>
-                <span className="text-[10px] text-zinc-600">USD</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-green-400">
-                  ${card.pricing.tcgplayer.market?.toFixed(2) ?? "N/A"}
-                </span>
-              </div>
-              <div className="flex gap-3 mt-1.5 text-[11px] text-zinc-400">
-                {card.pricing.tcgplayer.low != null && <span>Low: ${card.pricing.tcgplayer.low.toFixed(2)}</span>}
-                {card.pricing.tcgplayer.mid != null && <span>Mid: ${card.pricing.tcgplayer.mid.toFixed(2)}</span>}
-                {card.pricing.tcgplayer.high != null && <span>High: ${card.pricing.tcgplayer.high.toFixed(2)}</span>}
-              </div>
-            </div>
-          )}
-          {card.pricing.cardmarket && (
-            <div className="bg-zinc-800 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-zinc-500 text-xs font-medium">Cardmarket</p>
-                <span className="text-[10px] text-zinc-600">EUR</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-blue-400">
-                  {card.pricing.cardmarket.market?.toFixed(2) ?? "N/A"}&euro;
-                </span>
-              </div>
-              <div className="flex gap-3 mt-1.5 text-[11px] text-zinc-400">
-                {card.pricing.cardmarket.low != null && <span>Low: {card.pricing.cardmarket.low.toFixed(2)}&euro;</span>}
-                {card.pricing.cardmarket.mid != null && <span>Avg: {card.pricing.cardmarket.mid.toFixed(2)}&euro;</span>}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Prices — interactive charts */}
+      {card.pricing && <PriceChart pricing={card.pricing} />}
 
       {/* Prices — legacy single marketplace (Magic, Yu-Gi-Oh) */}
       {!card.pricing && card.prices && (
@@ -159,7 +123,7 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
           {Object.entries(card.details).map(([key, value]) => (
             <div
               key={key}
-              className="flex justify-between text-sm bg-zinc-800 rounded px-2 py-1.5"
+              className="flex justify-between text-sm bg-zinc-800 rounded px-2 py-1.5 hover:bg-zinc-750 transition-colors"
             >
               <span className="text-zinc-400 capitalize">{key}</span>
               <span className="text-zinc-200">{value}</span>

@@ -84,8 +84,8 @@ export default function CardOverlay({
       {/* Card detection frame guide */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div
-          className={`relative border-2 border-dashed rounded-lg transition-colors duration-300 ${
-            card ? "border-green-400" : "border-white/30"
+          className={`relative border-2 border-dashed rounded-lg transition-all duration-300 ${
+            card ? "border-green-400 animate-frame-pulse" : "border-white/30"
           }`}
           style={frameStyle}
         >
@@ -127,7 +127,7 @@ export default function CardOverlay({
 
       {/* Matched card info overlay */}
       {card && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-10">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-10 animate-slide-up">
           <div className="flex items-end justify-between">
             <div>
               <p className="text-white font-bold">{card.name}</p>
