@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  PokemonSet,
+  GameSet,
   fetchSets,
   indexSet,
   IndexProgress,
@@ -10,15 +10,22 @@ import {
 import { CardEmbeddingEntry, loadModel, onModelStateChange } from "@/lib/embeddings";
 import { CardGame } from "@/types";
 
+interface IndexedSetInfo {
+  setId: string;
+  count: number;
+}
+
 interface SetIndexerProps {
   game: CardGame;
   onIndexComplete: (entries: CardEmbeddingEntry[]) => void;
   indexedCount: number;
+  indexedSets: IndexedSetInfo[];
+  onRemoveSet: (setId: string) => void;
   dbLoading: boolean;
 }
 
-export default function SetIndexer({ game, onIndexComplete, indexedCount, dbLoading }: SetIndexerProps) {
-  const [sets, setSets] = useState<PokemonSet[]>([]);
+export default function SetIndexer({ game, onIndexComplete, indexedCount, indexedSets, onRemoveSet, dbLoading }: SetIndexerProps) {
+  const [sets, setSets] = useState<GameSet[]>([]);
   const [loading, setLoading] = useState(false);
   const [indexing, setIndexing] = useState(false);
   const [modelReady, setModelReady] = useState(false);
@@ -33,12 +40,12 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, dbLoad
   }, []);
 
   useEffect(() => {
-    if (game !== "pokemon") {
+    if (game !== "pokemon" && game !== "hololive") {
       setSets([]);
       return;
     }
     setLoading(true);
-    fetchSets().then((s) => {
+    fetchSets(game).then((s) => {
       setSets(s.filter((set) => set.cardCount.total <= 300));
       setLoading(false);
     });
@@ -66,7 +73,7 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, dbLoad
     }
 
     try {
-      const entries = await indexSet(selectedSet, (p) => setProgress(p));
+      const entries = await indexSet(selectedSet, (p) => setProgress(p), game);
       onIndexComplete(entries);
     } catch (err) {
       console.error("Indexing error:", err);
@@ -75,13 +82,13 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, dbLoad
       setIndexing(false);
       setProgress(null);
     }
-  }, [selectedSet, onIndexComplete, modelReady]);
+  }, [selectedSet, onIndexComplete, modelReady, game]);
 
-  if (game !== "pokemon") {
+  if (game !== "pokemon" && game !== "hololive") {
     return (
       <div className="p-4 text-center">
         <p className="text-zinc-400 text-sm">
-          Indexing is only available for Pokemon TCG for now.
+          Indexing is only available for Pokemon TCG and Hololive OCG for now.
         </p>
       </div>
     );
@@ -162,6 +169,39 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, dbLoad
       )}
 
       {error && <p className="text-[11px] text-red-400">{error}</p>}
+
+      {/* Indexed sets list */}
+      {indexedSets.length > 0 && !dbLoading && (
+        <div className="space-y-1 pt-1 border-t border-zinc-800">
+          <p className="text-[11px] text-zinc-500 font-medium">Indexed sets:</p>
+          {indexedSets.map(({ setId, count }) => {
+            const setInfo = sets.find((s) => s.id === setId);
+            return (
+              <div
+                key={setId}
+                className="flex items-center justify-between bg-zinc-800/50 rounded px-2 py-1.5 animate-fade-in hover:bg-zinc-800 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="text-[11px] text-zinc-300 truncate">
+                    {setInfo?.name ?? setId}
+                  </p>
+                  <p className="text-[10px] text-zinc-500">{count} cards</p>
+                </div>
+                <button
+                  onClick={() => onRemoveSet(setId)}
+                  disabled={indexing}
+                  className="text-zinc-500 hover:text-red-400 transition-colors p-1 flex-shrink-0 disabled:opacity-50"
+                  title="Remove set"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {indexedCount > 0 && !indexing && !dbLoading && (
         <p className="text-[11px] text-zinc-500">

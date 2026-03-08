@@ -1,4 +1,4 @@
-export type CardGame = "pokemon" | "magic" | "yugioh";
+export type CardGame = "pokemon" | "magic" | "yugioh" | "hololive";
 
 export interface CardPrice {
   low?: number;
@@ -8,9 +8,22 @@ export interface CardPrice {
   currency: string;
 }
 
+export interface TCGPlayerPrice extends CardPrice {
+  directLow?: number;
+}
+
+export interface CardmarketPrice extends CardPrice {
+  trend?: number;
+  avg1?: number;
+  avg7?: number;
+  avg30?: number;
+}
+
 export interface CardPricing {
-  tcgplayer?: CardPrice;
-  cardmarket?: CardPrice;
+  tcgplayer?: TCGPlayerPrice;
+  tcgplayerHolo?: TCGPlayerPrice;
+  cardmarket?: CardmarketPrice;
+  cardmarketHolo?: CardmarketPrice;
 }
 
 export interface CardData {

@@ -18,6 +18,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.ygoprodeck.com",
       },
+      {
+        protocol: "https",
+        hostname: "en.hololive-official-cardgame.com",
+      },
     ],
   },
 };

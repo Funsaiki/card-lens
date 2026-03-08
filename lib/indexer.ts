@@ -5,11 +5,12 @@
  */
 
 import { computeEmbedding, CardEmbeddingEntry } from "./embeddings";
+import { CardGame } from "@/types";
+import { HOLOLIVE_SET_NAMES, getHololiveImageUrl, HololiveRawCard } from "./hololive";
 
-export interface PokemonSet {
+export interface GameSet {
   id: string;
   name: string;
-  logo?: string;
   cardCount: { total: number; official: number };
 }
 
@@ -20,17 +21,96 @@ export interface SetCard {
   image?: string;
 }
 
-export async function fetchSets(): Promise<PokemonSet[]> {
+// Keep backward compat
+export type PokemonSet = GameSet;
+
+// ---------- Pokemon (TCGdex) ----------
+
+async function fetchPokemonSets(): Promise<GameSet[]> {
   const res = await fetch("https://api.tcgdex.net/v2/en/sets");
   if (!res.ok) return [];
   return res.json();
 }
 
-export async function fetchSetCards(setId: string): Promise<SetCard[]> {
+async function fetchPokemonSetCards(setId: string): Promise<SetCard[]> {
   const res = await fetch(`https://api.tcgdex.net/v2/en/sets/${setId}`);
   if (!res.ok) return [];
   const data = await res.json();
   return data.cards ?? [];
+}
+
+function getPokemonImageUrl(card: SetCard): string {
+  return card.image ? `${card.image}/high.webp` : "";
+}
+
+// ---------- Hololive ----------
+
+let hololiveDataCache: HololiveRawCard[] | null = null;
+
+async function loadHololiveData(): Promise<HololiveRawCard[]> {
+  if (hololiveDataCache) return hololiveDataCache;
+  const res = await fetch("/api/hololive/cards");
+  if (!res.ok) return [];
+  hololiveDataCache = await res.json();
+  return hololiveDataCache!;
+}
+
+async function fetchHololiveSets(): Promise<GameSet[]> {
+  const cards = await loadHololiveData();
+  const counts = new Map<string, number>();
+  for (const card of cards) {
+    for (const p of card.products) {
+      counts.set(p, (counts.get(p) ?? 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .filter(([id]) => id !== "hPR") // Skip promos (no consistent images)
+    .map(([id, count]) => ({
+      id,
+      name: HOLOLIVE_SET_NAMES[id] ?? id,
+      cardCount: { total: count, official: count },
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+async function fetchHololiveSetCards(setId: string): Promise<SetCard[]> {
+  const cards = await loadHololiveData();
+  return cards
+    .filter((c) => c.products.includes(setId))
+    .map((c) => ({
+      id: c.cardno,
+      localId: c.cardno,
+      name: c.name,
+      image: c.img,
+    }));
+}
+
+function getHololiveProxiedImageUrl(card: SetCard): string {
+  if (!card.image) return "";
+  const fullUrl = getHololiveImageUrl(card.image);
+  return `/api/image-proxy?url=${encodeURIComponent(fullUrl)}`;
+}
+
+// ---------- Generic API ----------
+
+export async function fetchSets(game?: CardGame): Promise<GameSet[]> {
+  switch (game) {
+    case "hololive":
+      return fetchHololiveSets();
+    case "pokemon":
+    default:
+      return fetchPokemonSets();
+  }
+}
+
+export async function fetchSetCards(setId: string, game?: CardGame): Promise<SetCard[]> {
+  switch (game) {
+    case "hololive":
+      return fetchHololiveSetCards(setId);
+    case "pokemon":
+    default:
+      return fetchPokemonSetCards(setId);
+  }
 }
 
 /**
@@ -66,9 +146,10 @@ export interface IndexProgress {
  */
 export async function indexSet(
   setId: string,
-  onProgress?: (progress: IndexProgress) => void
+  onProgress?: (progress: IndexProgress) => void,
+  game?: CardGame
 ): Promise<CardEmbeddingEntry[]> {
-  const cards = await fetchSetCards(setId);
+  const cards = await fetchSetCards(setId, game);
   const entries: CardEmbeddingEntry[] = [];
 
   for (let i = 0; i < cards.length; i++) {
@@ -78,8 +159,11 @@ export async function indexSet(
     if (!card.image) continue;
 
     try {
-      // TCGdex image URL format: base/high.webp
-      const imageUrl = `${card.image}/high.webp`;
+      const imageUrl =
+        game === "hololive"
+          ? getHololiveProxiedImageUrl(card)
+          : getPokemonImageUrl(card);
+
       const imageData = await loadImageData(imageUrl);
       const embedding = await computeEmbedding(imageData);
 
@@ -87,12 +171,14 @@ export async function indexSet(
         id: card.id,
         name: card.name,
         embedding,
-        imageUrl,
+        imageUrl:
+          game === "hololive"
+            ? getHololiveImageUrl(card.image)
+            : imageUrl,
         set: setId,
       });
     } catch (err) {
       console.warn(`Failed to index ${card.name}:`, err);
-      // Continue with next card
     }
   }
 

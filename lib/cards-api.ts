@@ -1,4 +1,4 @@
-import { CardData, CardGame, CardPricing } from "@/types";
+import { CardData, CardGame, CardPricing, TCGPlayerPrice, CardmarketPrice } from "@/types";
 
 // ---------- Pokemon (TCGdex — free, no key required) ----------
 
@@ -9,26 +9,34 @@ interface TCGdexCardSummary {
   image?: string;
 }
 
+interface TCGdexTCGPlayerVariant {
+  productId?: number;
+  lowPrice?: number;
+  midPrice?: number;
+  highPrice?: number;
+  marketPrice?: number;
+  directLowPrice?: number;
+}
+
 interface TCGdexPricing {
   cardmarket?: {
     avg?: number;
     low?: number;
     trend?: number;
+    avg1?: number;
+    avg7?: number;
+    avg30?: number;
+    "avg-holo"?: number;
+    "low-holo"?: number;
+    "trend-holo"?: number;
+    "avg1-holo"?: number;
+    "avg7-holo"?: number;
+    "avg30-holo"?: number;
   };
   tcgplayer?: {
-    normal?: {
-      lowPrice?: number;
-      midPrice?: number;
-      highPrice?: number;
-      marketPrice?: number;
-    };
-    "reverse-holofoil"?: {
-      lowPrice?: number;
-      midPrice?: number;
-      highPrice?: number;
-      marketPrice?: number;
-    };
-  };
+    normal?: TCGdexTCGPlayerVariant;
+    "reverse-holofoil"?: TCGdexTCGPlayerVariant;
+  } | null;
 }
 
 interface TCGdexCardFull {
@@ -44,34 +52,59 @@ interface TCGdexCardFull {
   pricing?: TCGdexPricing;
 }
 
+function parseTCGPlayerVariant(v: TCGdexTCGPlayerVariant): TCGPlayerPrice {
+  return {
+    low: v.lowPrice,
+    mid: v.midPrice,
+    high: v.highPrice,
+    market: v.marketPrice,
+    directLow: v.directLowPrice,
+    currency: "USD",
+  };
+}
+
 function parseTCGdexPricing(raw?: TCGdexPricing): CardPricing | undefined {
   if (!raw) return undefined;
   const pricing: CardPricing = {};
 
   if (raw.tcgplayer) {
-    // Prefer normal, fallback to reverse-holofoil
-    const variant = raw.tcgplayer.normal ?? raw.tcgplayer["reverse-holofoil"];
-    if (variant) {
-      pricing.tcgplayer = {
-        low: variant.lowPrice,
-        mid: variant.midPrice,
-        high: variant.highPrice,
-        market: variant.marketPrice,
-        currency: "USD",
-      };
+    if (raw.tcgplayer.normal) {
+      pricing.tcgplayer = parseTCGPlayerVariant(raw.tcgplayer.normal);
+    }
+    if (raw.tcgplayer["reverse-holofoil"]) {
+      pricing.tcgplayerHolo = parseTCGPlayerVariant(raw.tcgplayer["reverse-holofoil"]);
     }
   }
 
   if (raw.cardmarket) {
-    pricing.cardmarket = {
-      low: raw.cardmarket.low,
-      market: raw.cardmarket.trend,
-      mid: raw.cardmarket.avg,
+    const cm = raw.cardmarket;
+    const cardmarket: CardmarketPrice = {
+      low: cm.low,
+      mid: cm.avg,
+      market: cm.trend,
+      trend: cm.trend,
+      avg1: cm.avg1,
+      avg7: cm.avg7,
+      avg30: cm.avg30,
       currency: "EUR",
     };
+    pricing.cardmarket = cardmarket;
+
+    if (cm["trend-holo"] != null) {
+      pricing.cardmarketHolo = {
+        low: cm["low-holo"],
+        mid: cm["avg-holo"],
+        market: cm["trend-holo"],
+        trend: cm["trend-holo"],
+        avg1: cm["avg1-holo"],
+        avg7: cm["avg7-holo"],
+        avg30: cm["avg30-holo"],
+        currency: "EUR",
+      };
+    }
   }
 
-  if (!pricing.tcgplayer && !pricing.cardmarket) return undefined;
+  if (!pricing.tcgplayer && !pricing.tcgplayerHolo && !pricing.cardmarket && !pricing.cardmarketHolo) return undefined;
   return pricing;
 }
 
