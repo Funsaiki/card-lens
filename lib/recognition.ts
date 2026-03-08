@@ -77,7 +77,7 @@ function normalizeContrast(pixels: number[]): number[] {
  * 2. Compute the mean value
  * 3. Each pixel > mean => 1, else 0
  */
-function computeAHash(gray: number[], size: number): string {
+function computeAHash(gray: number[]): string {
   const mean = gray.reduce((a, b) => a + b, 0) / gray.length;
   let bits = "";
   for (const p of gray) {
@@ -126,7 +126,7 @@ export function computeHash(imageData: ImageData): ComputedHash {
   // aHash: NxN
   const resizedA = resizeImage(imageData, HASH_SIZE, HASH_SIZE);
   const grayA = normalizeContrast(toGrayscale(resizedA));
-  const aHash = computeAHash(grayA, HASH_SIZE);
+  const aHash = computeAHash(grayA);
 
   // dHash: (N+1)xN
   const resizedD = resizeImage(imageData, HASH_SIZE + 1, HASH_SIZE);

@@ -6,6 +6,10 @@ import {
   parseYugiohCard,
 } from "@/lib/cards-api";
 import { CardGame } from "@/types";
+import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
+import hololiveCardsData from "@/data/hololive-cards.json";
+
+const hololiveCards = hololiveCardsData as HololiveRawCard[];
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,9 +25,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!["pokemon", "magic", "yugioh"].includes(game)) {
+    if (!["pokemon", "magic", "yugioh", "hololive"].includes(game)) {
       return NextResponse.json(
-        { error: "Invalid game. Use: pokemon, magic, yugioh" },
+        { error: "Invalid game. Use: pokemon, magic, yugioh, hololive" },
         { status: 400 }
       );
     }
@@ -63,6 +67,11 @@ export async function GET(request: NextRequest) {
             const data = await res.json();
             if (data.data?.[0]) card = parseYugiohCard(data.data[0]);
           }
+          break;
+        }
+        case "hololive": {
+          const raw = hololiveCards.find((c) => c.cardno === cardId);
+          if (raw) card = parseHololiveCard(raw);
           break;
         }
       }
@@ -135,6 +144,14 @@ export async function GET(request: NextRequest) {
         }
         const data = await res.json();
         cards = (data.data ?? []).slice(0, 10).map(parseYugiohCard);
+        break;
+      }
+      case "hololive": {
+        const q = query.toLowerCase();
+        const matches = hololiveCards
+          .filter((c) => c.name.toLowerCase().includes(q) || c.cardno.toLowerCase().includes(q))
+          .slice(0, 10);
+        cards = matches.map(parseHololiveCard);
         break;
       }
     }

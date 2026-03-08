@@ -8,7 +8,7 @@ import {
   CardEmbeddingEntry,
 } from "@/lib/embeddings";
 import { searchCards, fetchCardById } from "@/lib/cards-api";
-import { loadAllEmbeddings, saveEmbeddings } from "@/lib/embedding-store";
+import { loadAllEmbeddings, saveEmbeddings, deleteSetEmbeddings } from "@/lib/embedding-store";
 import { CardData, CardGame, SessionCard } from "@/types";
 
 interface UseCardRecognitionOptions {
@@ -249,6 +249,16 @@ export function useCardRecognition({
     [game]
   );
 
+  const removeSet = useCallback(async (setId: string) => {
+    try {
+      await deleteSetEmbeddings(setId);
+      setEmbeddingDatabase((prev) => prev.filter((e) => e.set !== setId));
+      console.log(`[Recognition] Removed set: ${setId}`);
+    } catch (err) {
+      console.warn("[Recognition] Failed to remove set:", err);
+    }
+  }, []);
+
   const clearHistory = useCallback(() => {
     setHistory([]);
     setCurrentCard(null);
@@ -268,6 +278,7 @@ export function useCardRecognition({
     searchAndIndex,
     addToHistory,
     addToEmbeddingDatabase,
+    removeSet,
     clearHistory,
   };
 }
