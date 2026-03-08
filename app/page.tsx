@@ -1,101 +1,134 @@
-import Image from "next/image";
+import Link from "next/link";
+
+const GAMES = [
+  {
+    id: "pokemon",
+    name: "Pokemon TCG",
+    description: "Scan Pokemon trading cards",
+    color: "from-yellow-500 to-red-500",
+    bgHover: "hover:border-yellow-500/50",
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="currentColor">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="3" />
+        <line x1="2" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="15" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    ),
+  },
+  {
+    id: "magic",
+    name: "Magic: The Gathering",
+    description: "Scan MTG cards",
+    color: "from-purple-500 to-blue-500",
+    bgHover: "hover:border-purple-500/50",
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      </svg>
+    ),
+  },
+  {
+    id: "yugioh",
+    name: "Yu-Gi-Oh!",
+    description: "Scan Yu-Gi-Oh cards",
+    color: "from-orange-500 to-yellow-500",
+    bgHover: "hover:border-orange-500/50",
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" />
+      </svg>
+    ),
+  },
+];
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <main className="min-h-screen flex flex-col">
+      {/* Hero */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-20">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <h1 className="text-5xl sm:text-6xl font-bold tracking-tight mb-4">
+            <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
+              Card Lens
+            </span>
+          </h1>
+          <p className="text-lg text-zinc-400 max-w-md mx-auto">
+            Recognize trading cards in real-time using your camera.
+            Get instant prices, rarity, and details.
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+        {/* Game selection */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
+          {GAMES.map((game) => (
+            <Link
+              key={game.id}
+              href={`/scan?game=${game.id}`}
+              className={`group relative flex flex-col items-center gap-4 p-8 rounded-2xl border border-zinc-800 bg-zinc-900/50 transition-all duration-300 ${game.bgHover} hover:bg-zinc-900`}
+            >
+              {/* Gradient glow on hover */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${game.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`}
+              />
+
+              <div className="text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                {game.icon}
+              </div>
+              <div className="text-center">
+                <h2 className="font-semibold text-zinc-200 group-hover:text-white transition-colors">
+                  {game.name}
+                </h2>
+                <p className="text-sm text-zinc-500 mt-1">
+                  {game.description}
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <svg
+                className="w-5 h-5 text-zinc-600 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+            </Link>
+          ))}
+        </div>
+
+        {/* Features */}
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl text-center">
+          <div>
+            <p className="text-sm font-medium text-zinc-300">Phone as Camera</p>
+            <p className="text-xs text-zinc-500 mt-1">
+              Connect via QR code + WebRTC
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-300">Real-time Recognition</p>
+            <p className="text-xs text-zinc-500 mt-1">
+              Client-side processing, no server needed
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-300">Stream-ready</p>
+            <p className="text-xs text-zinc-500 mt-1">
+              Works with OBS and screen sharing
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="text-center py-6 text-xs text-zinc-600">
+        Card Lens &middot; Open source card recognition
       </footer>
-    </div>
+    </main>
   );
 }
