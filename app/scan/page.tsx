@@ -63,16 +63,22 @@ function ScanContent() {
     frameHeightPercent,
   });
 
-  const indexedCount = embeddingDatabase.length;
+  // Filter embeddings for the current game
+  const gameEmbeddings = useMemo(
+    () => embeddingDatabase.filter((e) => !e.game || e.game === game),
+    [embeddingDatabase, game]
+  );
 
-  // Compute indexed sets with card counts
+  const indexedCount = gameEmbeddings.length;
+
+  // Compute indexed sets with card counts (filtered by current game)
   const indexedSets = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const entry of embeddingDatabase) {
+    for (const entry of gameEmbeddings) {
       counts.set(entry.set, (counts.get(entry.set) ?? 0) + 1);
     }
     return Array.from(counts.entries()).map(([setId, count]) => ({ setId, count }));
-  }, [embeddingDatabase]);
+  }, [gameEmbeddings]);
 
   const handleIndexComplete = useCallback(
     (entries: CardEmbeddingEntry[]) => {

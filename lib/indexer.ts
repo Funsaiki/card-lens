@@ -176,6 +176,7 @@ export async function indexSet(
             ? getHololiveImageUrl(card.image)
             : imageUrl,
         set: setId,
+        game: game ?? "pokemon",
       });
     } catch (err) {
       console.warn(`Failed to index ${card.name}:`, err);

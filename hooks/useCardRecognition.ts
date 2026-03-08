@@ -125,7 +125,8 @@ export function useCardRecognition({
     if (!video || !canvas) return;
     if (video.readyState < 2) return;
 
-    const db = embeddingDatabaseRef.current;
+    const allDb = embeddingDatabaseRef.current;
+    const db = allDb.filter((e) => !e.game || e.game === gameRef.current);
     if (db.length === 0) return;
 
     processingRef.current = true;

@@ -116,6 +116,7 @@ export interface CardEmbeddingEntry {
   embedding: Float32Array;
   imageUrl: string;
   set: string;
+  game?: string;
 }
 
 export interface EmbeddingMatch {

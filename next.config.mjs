@@ -20,7 +20,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "en.hololive-official-cardgame.com",
+        hostname: "hololive-official-cardgame.com",
       },
     ],
   },
