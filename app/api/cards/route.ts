@@ -9,6 +9,8 @@ import { CardGame } from "@/types";
 import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
 import hololiveCardsData from "@/data/hololive-cards.json";
 
+export const dynamic = "force-dynamic";
+
 const hololiveCards = hololiveCardsData as HololiveRawCard[];
 
 export async function GET(request: NextRequest) {
