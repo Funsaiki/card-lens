@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   GameSet,
   fetchSets,
@@ -33,6 +33,9 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
   const [progress, setProgress] = useState<IndexProgress | null>(null);
   const [selectedSet, setSelectedSet] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [indexAllProgress, setIndexAllProgress] = useState<{ current: number; total: number } | null>(null);
+  const cancelRef = useRef(false);
 
   // Subscribe to model state
   useEffect(() => {
@@ -51,6 +54,37 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
     });
   }, [game]);
 
+  // Filter sets by search query
+  const indexedSetIds = useMemo(() => new Set(indexedSets.map((s) => s.setId)), [indexedSets]);
+
+  const filteredSets = useMemo(() => {
+    if (!searchQuery.trim()) return sets;
+    const q = searchQuery.toLowerCase();
+    return sets.filter(
+      (s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
+    );
+  }, [sets, searchQuery]);
+
+  // Sets that haven't been indexed yet (for "Index All")
+  const unindexedSets = useMemo(
+    () => filteredSets.filter((s) => !indexedSetIds.has(s.id)),
+    [filteredSets, indexedSetIds]
+  );
+
+  const ensureModel = useCallback(async () => {
+    if (modelReady) return true;
+    setModelLoading(true);
+    try {
+      await loadModel();
+      setModelLoading(false);
+      return true;
+    } catch {
+      setError("Failed to load AI model.");
+      setModelLoading(false);
+      return false;
+    }
+  }, [modelReady]);
+
   const handleIndex = useCallback(async () => {
     if (!selectedSet) return;
 
@@ -58,18 +92,9 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
     setError(null);
     setProgress(null);
 
-    // Ensure model is loaded first
-    if (!modelReady) {
-      setModelLoading(true);
-      try {
-        await loadModel();
-      } catch {
-        setError("Failed to load AI model.");
-        setIndexing(false);
-        setModelLoading(false);
-        return;
-      }
-      setModelLoading(false);
+    if (!(await ensureModel())) {
+      setIndexing(false);
+      return;
     }
 
     try {
@@ -82,7 +107,53 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
       setIndexing(false);
       setProgress(null);
     }
-  }, [selectedSet, onIndexComplete, modelReady, game]);
+  }, [selectedSet, onIndexComplete, ensureModel, game]);
+
+  const handleIndexAll = useCallback(async () => {
+    if (unindexedSets.length === 0) return;
+
+    setIndexing(true);
+    setError(null);
+    setProgress(null);
+    cancelRef.current = false;
+
+    if (!(await ensureModel())) {
+      setIndexing(false);
+      return;
+    }
+
+    const toIndex = [...unindexedSets];
+    setIndexAllProgress({ current: 0, total: toIndex.length });
+
+    for (let i = 0; i < toIndex.length; i++) {
+      if (cancelRef.current) {
+        setError("Indexing cancelled.");
+        break;
+      }
+
+      const set = toIndex[i];
+      setIndexAllProgress({ current: i + 1, total: toIndex.length });
+
+      try {
+        const entries = await indexSet(
+          set.id,
+          (p) => setProgress({ ...p, cardName: `[${set.name}] ${p.cardName}` }),
+          game
+        );
+        onIndexComplete(entries);
+      } catch (err) {
+        console.error(`Indexing error for ${set.id}:`, err);
+      }
+    }
+
+    setIndexing(false);
+    setProgress(null);
+    setIndexAllProgress(null);
+  }, [unindexedSets, onIndexComplete, ensureModel, game]);
+
+  const handleCancel = useCallback(() => {
+    cancelRef.current = true;
+  }, []);
 
   if (game !== "pokemon" && game !== "hololive") {
     return (
@@ -119,6 +190,16 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
         </p>
       )}
 
+      {/* Search filter */}
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Filter sets..."
+        disabled={indexing || loading || dbLoading}
+        className="w-full px-2 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 disabled:opacity-50"
+      />
+
       {/* Set selector */}
       <select
         value={selectedSet}
@@ -127,22 +208,49 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
         className="w-full px-2 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:outline-none focus:border-zinc-500 disabled:opacity-50"
       >
         <option value="">
-          {loading ? "Loading sets..." : "Choose a set..."}
+          {loading ? "Loading sets..." : `Choose a set... (${filteredSets.length})`}
         </option>
-        {sets.map((set) => (
-          <option key={set.id} value={set.id}>
-            {set.name} ({set.cardCount.total})
+        {filteredSets.map((set) => (
+          <option key={set.id} value={set.id} disabled={indexedSetIds.has(set.id)}>
+            {set.name} ({set.cardCount.total}){indexedSetIds.has(set.id) ? " ✓" : ""}
           </option>
         ))}
       </select>
 
-      <button
-        onClick={handleIndex}
-        disabled={!selectedSet || indexing || dbLoading}
-        className="w-full px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white rounded-lg transition-colors"
-      >
-        {indexing ? "Indexing..." : "Index Set"}
-      </button>
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <button
+          onClick={handleIndex}
+          disabled={!selectedSet || indexing || dbLoading || indexedSetIds.has(selectedSet)}
+          className="flex-1 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white rounded-lg transition-colors"
+        >
+          {indexing && !indexAllProgress ? "Indexing..." : "Index Set"}
+        </button>
+        {!indexing ? (
+          <button
+            onClick={handleIndexAll}
+            disabled={unindexedSets.length === 0 || indexing || dbLoading}
+            title={`Index ${unindexedSets.length} remaining set${unindexedSets.length !== 1 ? "s" : ""}`}
+            className="px-3 py-1.5 text-xs bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:hover:bg-purple-600 text-white rounded-lg transition-colors whitespace-nowrap"
+          >
+            All ({unindexedSets.length})
+          </button>
+        ) : (
+          <button
+            onClick={handleCancel}
+            className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors whitespace-nowrap"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
+
+      {/* Index all progress */}
+      {indexAllProgress && (
+        <p className="text-[10px] text-purple-400">
+          Set {indexAllProgress.current}/{indexAllProgress.total}
+        </p>
+      )}
 
       {/* Model loading indicator */}
       {modelLoading && (
