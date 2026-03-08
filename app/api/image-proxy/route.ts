@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 const ALLOWED_HOSTS = [
   "en.hololive-official-cardgame.com",
   "hololive-official-cardgame.com",
