@@ -1,6 +1,6 @@
 import { CardData } from "@/types";
 
-const HOLOLIVE_IMAGE_BASE = "https://en.hololive-official-cardgame.com";
+const HOLOLIVE_IMAGE_BASE = "https://hololive-official-cardgame.com";
 
 export interface HololiveRawCard {
   id: number;

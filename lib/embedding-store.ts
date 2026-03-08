@@ -10,7 +10,7 @@ import {
 } from "./embeddings";
 
 const DB_NAME = "card-lens";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "embeddings";
 
 interface StoredEntry {
@@ -19,17 +19,26 @@ interface StoredEntry {
   embedding: number[];
   imageUrl: string;
   set: string;
+  game?: string;
 }
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
+      const oldVersion = event.oldVersion;
+      if (oldVersion < 1) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
         store.createIndex("set", "set", { unique: false });
+        store.createIndex("game", "game", { unique: false });
+      } else if (oldVersion < 2) {
+        const tx = (event.target as IDBOpenDBRequest).transaction!;
+        const store = tx.objectStore(STORE_NAME);
+        if (!store.indexNames.contains("game")) {
+          store.createIndex("game", "game", { unique: false });
+        }
       }
     };
 
@@ -53,6 +62,7 @@ export async function saveEmbeddings(entries: CardEmbeddingEntry[]): Promise<voi
       embedding: serializeEmbedding(entry.embedding),
       imageUrl: entry.imageUrl,
       set: entry.set,
+      game: entry.game,
     };
     store.put(stored);
   }
@@ -88,6 +98,7 @@ export async function loadAllEmbeddings(): Promise<CardEmbeddingEntry[]> {
         embedding: deserializeEmbedding(s.embedding),
         imageUrl: s.imageUrl,
         set: s.set,
+        game: s.game,
       }));
       resolve(entries);
     };
