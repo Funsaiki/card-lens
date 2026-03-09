@@ -21,9 +21,6 @@ export interface SetCard {
   image?: string;
 }
 
-// Keep backward compat
-export type PokemonSet = GameSet;
-
 // ---------- Pokemon (TCGdex) ----------
 
 async function fetchPokemonSets(): Promise<GameSet[]> {

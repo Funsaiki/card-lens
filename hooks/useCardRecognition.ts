@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { captureFrame, extractCardRegion } from "@/lib/recognition";
 import {
   computeEmbedding,
-  findBestEmbeddingMatch,
+  cosineSimilarity,
   CardEmbeddingEntry,
 } from "@/lib/embeddings";
 import { searchCards, fetchCardById } from "@/lib/cards-api";
@@ -45,8 +45,6 @@ export function useCardRecognition({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const confirmedCardRef = useRef<string>("");
   const processingRef = useRef(false);
-
-  // Vote buffer: last N match IDs
   const voteBufferRef = useRef<(string | null)[]>([]);
 
   // Refs for stable processFrame
@@ -81,7 +79,6 @@ export function useCardRecognition({
       const existingIds = new Set(prev.map((e) => e.id));
       const newEntries = entries.filter((e) => !existingIds.has(e.id));
       if (newEntries.length > 0) {
-        // Persist new entries to IndexedDB
         saveEmbeddings(newEntries).catch((err) =>
           console.warn("[Recognition] Failed to save to IndexedDB:", err)
         );
@@ -99,9 +96,6 @@ export function useCardRecognition({
     ]);
   }, []);
 
-  /**
-   * Check if a card ID has enough votes in the recent buffer.
-   */
   function getVoteWinner(buffer: (string | null)[]): string | null {
     const counts = new Map<string, number>();
     for (const id of buffer) {
@@ -110,9 +104,7 @@ export function useCardRecognition({
       }
     }
     for (const [id, count] of Array.from(counts.entries())) {
-      if (count >= VOTES_NEEDED) {
-        return id;
-      }
+      if (count >= VOTES_NEEDED) return id;
     }
     return null;
   }
@@ -122,8 +114,7 @@ export function useCardRecognition({
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-    if (video.readyState < 2) return;
+    if (!video || !canvas || video.readyState < 2) return;
 
     const allDb = embeddingDatabaseRef.current;
     const db = allDb.filter((e) => e.game === gameRef.current);
@@ -139,61 +130,48 @@ export function useCardRecognition({
       const cardRegion = extractCardRegion(frame, frameHeightRef.current);
       const embedding = await computeEmbedding(cardRegion);
 
-      // Find best match
-      const match = findBestEmbeddingMatch(embedding, db, MATCH_THRESHOLD);
-      // Also get absolute best for debug (threshold 0)
-      const closest = findBestEmbeddingMatch(embedding, db, 0);
+      // Single pass: find best match (no threshold) for both debug and detection
+      let bestMatch: CardEmbeddingEntry | null = null;
+      let bestSimilarity = -Infinity;
 
-      if (match) {
-        // Add vote
-        voteBufferRef.current.push(match.entry.id);
-        if (voteBufferRef.current.length > VOTE_WINDOW) {
-          voteBufferRef.current.shift();
+      for (const ref of db) {
+        const sim = cosineSimilarity(embedding, ref.embedding);
+        if (sim > bestSimilarity) {
+          bestSimilarity = sim;
+          bestMatch = ref;
         }
+      }
 
-        const conf = Math.round(match.similarity * 100);
+      const isAboveThreshold = bestMatch && bestSimilarity >= MATCH_THRESHOLD;
+
+      // Update vote buffer
+      const voteId = isAboveThreshold ? bestMatch!.id : null;
+      voteBufferRef.current.push(voteId);
+      if (voteBufferRef.current.length > VOTE_WINDOW) {
+        voteBufferRef.current.shift();
+      }
+
+      if (isAboveThreshold) {
+        const conf = Math.round(bestSimilarity * 100);
+        const votes = voteBufferRef.current.filter((v) => v === bestMatch!.id).length;
         setDebugInfo(
-          `${match.entry.name} sim=${match.similarity.toFixed(3)} (${conf}%) [${voteBufferRef.current.filter((v) => v === match.entry.id).length}/${VOTES_NEEDED} votes]`
+          `${bestMatch!.name} sim=${bestSimilarity.toFixed(3)} (${conf}%) [${votes}/${VOTES_NEEDED} votes]`
         );
 
-        // Check if we have a consensus
         const winner = getVoteWinner(voteBufferRef.current);
         if (winner && winner !== confirmedCardRef.current) {
           confirmedCardRef.current = winner;
           const winnerEntry = db.find((e) => e.id === winner);
           if (!winnerEntry) return;
 
-          console.log(`[Recognition] CONFIRMED: ${winnerEntry.name} (sim=${match.similarity.toFixed(3)})`);
+          console.log(`[Recognition] CONFIRMED: ${winnerEntry.name} (sim=${bestSimilarity.toFixed(3)})`);
           setConfidence(conf);
 
+          // Fetch full card data, fallback to embedding entry info
+          let card: CardData;
           try {
-            // Fetch by exact ID to get the correct set/rarity/price
             const fullCard = await fetchCardById(gameRef.current, winnerEntry.id);
-            if (fullCard) {
-              setCurrentCard(fullCard);
-              setHistory((prev) => [
-                { card: fullCard, timestamp: Date.now(), confidence: conf },
-                ...prev,
-              ]);
-            } else {
-              // Fallback to basic info from embedding entry
-              const fallback: CardData = {
-                id: winnerEntry.id,
-                name: winnerEntry.name,
-                game: gameRef.current,
-                set: winnerEntry.set,
-                rarity: "",
-                imageUrl: winnerEntry.imageUrl,
-                details: {},
-              };
-              setCurrentCard(fallback);
-              setHistory((prev) => [
-                { card: fallback, timestamp: Date.now(), confidence: conf },
-                ...prev,
-              ]);
-            }
-          } catch {
-            setCurrentCard({
+            card = fullCard ?? {
               id: winnerEntry.id,
               name: winnerEntry.name,
               game: gameRef.current,
@@ -201,19 +179,27 @@ export function useCardRecognition({
               rarity: "",
               imageUrl: winnerEntry.imageUrl,
               details: {},
-            });
+            };
+          } catch {
+            card = {
+              id: winnerEntry.id,
+              name: winnerEntry.name,
+              game: gameRef.current,
+              set: winnerEntry.set,
+              rarity: "",
+              imageUrl: winnerEntry.imageUrl,
+              details: {},
+            };
           }
-        }
-      } else {
-        // No match above threshold
-        voteBufferRef.current.push(null);
-        if (voteBufferRef.current.length > VOTE_WINDOW) {
-          voteBufferRef.current.shift();
-        }
 
-        if (closest) {
-          setDebugInfo(`best: ${closest.entry.name} sim=${closest.similarity.toFixed(3)} (too low)`);
+          setCurrentCard(card);
+          setHistory((prev) => [
+            { card, timestamp: Date.now(), confidence: conf },
+            ...prev,
+          ]);
         }
+      } else if (bestMatch) {
+        setDebugInfo(`best: ${bestMatch.name} sim=${bestSimilarity.toFixed(3)} (too low)`);
       }
     } catch (err) {
       console.error("Recognition error:", err);

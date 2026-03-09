@@ -38,20 +38,6 @@ export interface CardData {
   details: Record<string, string>;
 }
 
-export interface SignalMessage {
-  sessionId: string;
-  type: "offer" | "answer" | "ice-candidate";
-  data: unknown;
-}
-
-export interface SignalStore {
-  offer?: RTCSessionDescriptionInit;
-  answer?: RTCSessionDescriptionInit;
-  iceCandidatesOffer: RTCIceCandidateInit[];
-  iceCandidatesAnswer: RTCIceCandidateInit[];
-  createdAt: number;
-}
-
 export interface SessionCard {
   card: CardData;
   timestamp: number;
