@@ -5,21 +5,21 @@ import QRCode from "react-qr-code";
 import { ConnectionState } from "@/hooks/useWebRTC";
 
 interface QRConnectorProps {
-  sessionId: string;
+  peerId: string;
   connectionState: ConnectionState;
   onConnect: () => void;
 }
 
 export default function QRConnector({
-  sessionId,
+  peerId,
   connectionState,
   onConnect,
 }: QRConnectorProps) {
   const phoneUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
     const base = window.location.origin;
-    return `${base}/phone?session=${sessionId}`;
-  }, [sessionId]);
+    return `${base}/phone?peer=${peerId}`;
+  }, [peerId]);
 
   const stateMessages: Record<ConnectionState, string> = {
     idle: "Click to generate connection",
