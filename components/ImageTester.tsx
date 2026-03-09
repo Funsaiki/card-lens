@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import { useState, useRef, useCallback } from "react";
 import { extractCardRegion } from "@/lib/recognition";
 import {
