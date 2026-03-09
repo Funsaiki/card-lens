@@ -5,7 +5,7 @@ const GAMES = [
   {
     id: "pokemon",
     name: "Pokemon TCG",
-    description: "Identifiez et estimez vos cartes Pokemon",
+    description: "Identify and price your Pokemon cards",
     color: "from-yellow-500 to-red-500",
     bgHover: "hover:border-yellow-500/50",
     icon: (
@@ -20,7 +20,7 @@ const GAMES = [
   {
     id: "magic",
     name: "Magic: The Gathering",
-    description: "Reconnaissez vos cartes Magic instantanement",
+    description: "Instantly recognize your Magic cards",
     color: "from-purple-500 to-blue-500",
     bgHover: "hover:border-purple-500/50",
     icon: (
@@ -32,7 +32,7 @@ const GAMES = [
   {
     id: "yugioh",
     name: "Yu-Gi-Oh!",
-    description: "Scannez et retrouvez vos cartes Yu-Gi-Oh",
+    description: "Scan and look up your Yu-Gi-Oh cards",
     color: "from-orange-500 to-yellow-500",
     bgHover: "hover:border-orange-500/50",
     icon: (
@@ -44,7 +44,7 @@ const GAMES = [
   {
     id: "hololive",
     name: "Hololive OCG",
-    description: "Explorez votre collection Hololive OCG",
+    description: "Browse and identify your Hololive cards",
     color: "from-cyan-400 to-blue-500",
     bgHover: "hover:border-cyan-400/50",
     icon: (
@@ -120,21 +120,21 @@ export default function Home() {
         {/* Features */}
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl text-center">
           <div>
-            <p className="text-sm font-medium text-zinc-300">Utilisez votre telephone</p>
+            <p className="text-sm font-medium text-zinc-300">Use Your Phone</p>
             <p className="text-xs text-zinc-500 mt-1">
-              Scannez un QR code pour streamer la camera de votre telephone
+              Scan a QR code to stream your phone camera
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-zinc-300">Reconnaissance instantanee</p>
+            <p className="text-sm font-medium text-zinc-300">Instant Recognition</p>
             <p className="text-xs text-zinc-500 mt-1">
-              IA embarquee dans le navigateur, aucun envoi de donnees
+              AI runs in your browser, no data sent anywhere
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-zinc-300">Prix et details</p>
+            <p className="text-sm font-medium text-zinc-300">Prices & Details</p>
             <p className="text-xs text-zinc-500 mt-1">
-              Consultez la valeur et la rarete de chaque carte scannee
+              See market value and rarity for every scanned card
             </p>
           </div>
         </div>
