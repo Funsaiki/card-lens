@@ -7,7 +7,7 @@ import { getCardFrameStyle } from "@/lib/card-frame";
 
 function PhoneContent() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session");
+  const remotePeerId = searchParams.get("peer");
 
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,7 @@ function PhoneContent() {
 
   const { connectionState, start } = useWebRTC({
     role: "sender",
-    sessionId: sessionId ?? undefined,
+    remotePeerId: remotePeerId ?? undefined,
   });
 
   // Keep a stable ref to start so startCamera doesn't re-create
@@ -71,7 +71,7 @@ function PhoneContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!sessionId) {
+  if (!remotePeerId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-6">
         <div className="text-center">

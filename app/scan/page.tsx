@@ -10,6 +10,7 @@ import QRConnector from "@/components/QRConnector";
 import SessionHistory from "@/components/SessionHistory";
 import SearchResults from "@/components/SearchResults";
 import SetIndexer from "@/components/SetIndexer";
+import Onboarding, { useOnboarding } from "@/components/Onboarding";
 
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useCardRecognition } from "@/hooks/useCardRecognition";
@@ -31,15 +32,17 @@ function ScanContent() {
   const [lastSearchQuery, setLastSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { show: showOnboarding, dismiss: dismissOnboarding, reopen: reopenOnboarding } = useOnboarding();
   const [frameHeightPercent, setFrameHeightPercent] = useState(0.75);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const {
-    sessionId,
+    peerId,
     connectionState,
     remoteStream,
     start: startWebRTC,
+    cleanup: cleanupWebRTC,
   } = useWebRTC({ role: "receiver" });
 
   const {
@@ -117,6 +120,14 @@ function ScanContent() {
     },
     [startWebcam, stopWebcam]
   );
+
+  const handleStopCamera = useCallback(() => {
+    if (videoSource === "phone") {
+      cleanupWebRTC();
+    } else {
+      stopWebcam();
+    }
+  }, [videoSource, cleanupWebRTC, stopWebcam]);
 
   useEffect(() => {
     if (videoSource === "webcam") {
@@ -227,20 +238,31 @@ function ScanContent() {
           </button>
         </form>
 
-        {/* Sidebar toggle */}
-        <button
-          onClick={() => setSidebarOpen((v) => !v)}
-          className="p-1.5 text-zinc-400 hover:text-white transition-colors flex-shrink-0"
-          title={sidebarOpen ? "Hide panel" : "Show panel"}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {sidebarOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
-            )}
-          </svg>
-        </button>
+        {/* Help + Sidebar toggle */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={reopenOnboarding}
+            className="p-1.5 text-zinc-500 hover:text-white transition-colors"
+            title="How to use"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="p-1.5 text-zinc-400 hover:text-white transition-colors"
+            title={sidebarOpen ? "Hide panel" : "Show panel"}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {sidebarOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+              )}
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Main content */}
@@ -270,6 +292,19 @@ function ScanContent() {
             >
               Phone
             </button>
+            {activeStream && (
+              <button
+                onClick={handleStopCamera}
+                className="ml-auto px-2 py-0.5 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-full transition-colors flex items-center gap-1"
+                title="Stop camera"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                </svg>
+                Stop
+              </button>
+            )}
           </div>
 
           {/* Video feed + overlay */}
@@ -278,7 +313,7 @@ function ScanContent() {
             connectionState !== "connected" ? (
               <div className="h-full flex items-center justify-center">
                 <QRConnector
-                  sessionId={sessionId}
+                  peerId={peerId}
                   connectionState={connectionState}
                   onConnect={startWebRTC}
                 />
@@ -360,6 +395,8 @@ function ScanContent() {
           </aside>
         )}
       </div>
+
+      <Onboarding show={showOnboarding} onDone={dismissOnboarding} />
     </div>
   );
 }
