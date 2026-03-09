@@ -41,5 +41,8 @@ certificates
 # test files
 /testscreen
 
+# scripts
+/scripts
+
 # claude
 .claude/.env
