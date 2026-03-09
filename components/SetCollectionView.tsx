@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CardGame, CollectionItem } from "@/types";
 import { fetchSets, fetchSetCards, GameSet, SetCard } from "@/lib/indexer";
 import { getHololiveImageUrl } from "@/lib/hololive";
+import Dropdown from "@/components/Dropdown";
 
 interface Props {
   game: CardGame;
@@ -70,11 +71,12 @@ export default function SetCollectionView({ game, ownedCards }: Props) {
 
   const selectedSet = sets.find((s) => s.id === selectedSetId);
   const ownedCount = setCards.filter((c) => ownedCardIds.has(c.id)).length;
+  const pct = setCards.length > 0 ? Math.round((ownedCount / setCards.length) * 100) : 0;
 
   if (loadingSets) {
     return (
       <div className="flex justify-center py-12">
-        <span className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -82,7 +84,7 @@ export default function SetCollectionView({ game, ownedCards }: Props) {
   if (sets.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-zinc-400">No sets available for this game</p>
+        <p className="text-sm text-[var(--muted)]">No sets available for this game</p>
       </div>
     );
   }
@@ -90,18 +92,13 @@ export default function SetCollectionView({ game, ownedCards }: Props) {
   return (
     <div>
       {/* Set selector */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800">
-        <select
+      <div className="px-4 py-3 border-b border-white/[0.06]">
+        <Dropdown
           value={selectedSetId ?? ""}
-          onChange={(e) => setSelectedSetId(e.target.value)}
-          className="flex-1 px-3 py-2 text-sm bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-200 focus:outline-none focus:border-blue-500 truncate"
-        >
-          {sets.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} ({s.cardCount.total} cards)
-            </option>
-          ))}
-        </select>
+          onChange={(val) => setSelectedSetId(val)}
+          options={sets.map((s) => ({ value: s.id, label: `${s.name} (${s.cardCount.total} cards)` }))}
+          searchable
+        />
       </div>
 
       {/* Completion stats */}
@@ -111,14 +108,14 @@ export default function SetCollectionView({ game, ownedCards }: Props) {
             <span className="text-xs text-zinc-400">
               {ownedCount} / {setCards.length} cards
             </span>
-            <span className="text-xs text-zinc-500">
-              {setCards.length > 0 ? Math.round((ownedCount / setCards.length) * 100) : 0}%
+            <span className={`text-xs font-medium ${pct === 100 ? "text-green-400" : pct > 50 ? "text-indigo-400" : "text-[var(--muted)]"}`}>
+              {pct}%
             </span>
           </div>
-          <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-500"
-              style={{ width: `${setCards.length > 0 ? (ownedCount / setCards.length) * 100 : 0}%` }}
+              className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? "bg-gradient-to-r from-green-500 to-emerald-400" : "bg-gradient-to-r from-indigo-500 to-violet-500"}`}
+              style={{ width: `${pct}%` }}
             />
           </div>
         </div>
@@ -128,7 +125,7 @@ export default function SetCollectionView({ game, ownedCards }: Props) {
       <div className="p-4">
         {loadingCards ? (
           <div className="flex justify-center py-12">
-            <span className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
@@ -139,10 +136,10 @@ export default function SetCollectionView({ game, ownedCards }: Props) {
               return (
                 <div
                   key={card.id}
-                  className={`relative aspect-[2.5/3.5] bg-zinc-800 rounded-lg overflow-hidden border transition-all ${
+                  className={`relative aspect-[2.5/3.5] bg-zinc-800/50 rounded-lg overflow-hidden border transition-all ${
                     owned
-                      ? "border-blue-500/40 shadow-sm shadow-blue-500/10"
-                      : "border-zinc-800 opacity-40 grayscale"
+                      ? "border-indigo-500/30 shadow-sm shadow-indigo-500/10"
+                      : "border-white/[0.04] opacity-35 grayscale"
                   }`}
                 >
                   {imageUrl && (

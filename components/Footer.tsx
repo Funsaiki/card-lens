@@ -2,31 +2,22 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-zinc-800/50 bg-zinc-950">
+    <footer className="border-t border-white/[0.04]">
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-[var(--muted)]">
             &copy; {new Date().getFullYear()} Card Lens. All rights reserved.
           </p>
-          <nav className="flex items-center gap-4 text-xs text-zinc-500">
-            <Link
-              href="/legal"
-              className="hover:text-zinc-300 transition-colors"
-            >
+          <nav className="flex items-center gap-4 text-xs text-[var(--muted)]">
+            <Link href="/legal" className="hover:text-zinc-300 transition-colors">
               Legal Notice
             </Link>
-            <span className="text-zinc-700">|</span>
-            <Link
-              href="/terms"
-              className="hover:text-zinc-300 transition-colors"
-            >
+            <span className="text-white/10">|</span>
+            <Link href="/terms" className="hover:text-zinc-300 transition-colors">
               Terms of Use
             </Link>
-            <span className="text-zinc-700">|</span>
-            <Link
-              href="/privacy"
-              className="hover:text-zinc-300 transition-colors"
-            >
+            <span className="text-white/10">|</span>
+            <Link href="/privacy" className="hover:text-zinc-300 transition-colors">
               Privacy
             </Link>
           </nav>

@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
   }
 
   const VALID_GAMES = ["pokemon", "magic", "yugioh", "hololive"];
-  const VALID_CONDITIONS = ["mint", "near_mint", "excellent", "good", "light_played", "played", "poor"];
+  const VALID_CONDITIONS = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
 
   if (!VALID_GAMES.includes(card.game)) {
     return NextResponse.json({ error: "Invalid game" }, { status: 400 });

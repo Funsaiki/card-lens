@@ -13,7 +13,7 @@ interface CardInfoProps {
 export default function CardInfo({ card, confidence }: CardInfoProps) {
   if (!card) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-500 p-6">
+      <div className="flex flex-col items-center justify-center h-full text-[var(--muted)] p-6">
         <svg
           className="w-16 h-16 mb-3 opacity-30"
           fill="none"
@@ -45,7 +45,7 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
     <div className="flex flex-col gap-4 p-4 overflow-y-auto animate-fade-in-up">
       {/* Card image */}
       {card.imageUrl && (
-        <div className="relative aspect-[2.5/3.5] w-full max-w-[240px] mx-auto rounded-lg overflow-hidden shadow-lg animate-scale-in">
+        <div className="relative aspect-[2.5/3.5] w-full max-w-[240px] mx-auto rounded-lg overflow-hidden shadow-lg shadow-black/40 animate-scale-in">
           <Image
             src={card.imageUrl}
             alt={card.name}
@@ -59,19 +59,19 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
       {/* Card name and game */}
       <div>
         <h2 className="text-lg font-bold text-white">{card.name}</h2>
-        <p className="text-sm text-zinc-400">{gameLabel}</p>
+        <p className="text-sm text-[var(--muted)]">{gameLabel}</p>
       </div>
 
       {/* Confidence */}
       {confidence !== undefined && (
         <div>
-          <div className="flex justify-between text-xs text-zinc-400 mb-1">
+          <div className="flex justify-between text-xs text-[var(--muted)] mb-1">
             <span>Match confidence</span>
             <span>{confidence.toFixed(0)}%</span>
           </div>
-          <div className="w-full bg-zinc-700 rounded-full h-1.5">
+          <div className="w-full bg-white/[0.06] rounded-full h-1.5">
             <div
-              className="bg-green-500 h-1.5 rounded-full transition-all animate-grow-width"
+              className="bg-gradient-to-r from-indigo-500 to-green-500 h-1.5 rounded-full transition-all animate-grow-width"
               style={{ width: `${confidence}%` }}
             />
           </div>
@@ -83,12 +83,12 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
 
       {/* Set and rarity */}
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="bg-zinc-800 rounded-lg p-2 hover:bg-zinc-750 transition-colors">
-          <p className="text-zinc-500 text-xs">Set</p>
+        <div className="bg-white/[0.04] border border-white/[0.06] rounded-lg p-2 transition-colors hover:bg-white/[0.06]">
+          <p className="text-[var(--muted)] text-xs">Set</p>
           <p className="text-zinc-200 truncate">{card.set}</p>
         </div>
-        <div className="bg-zinc-800 rounded-lg p-2 hover:bg-zinc-750 transition-colors">
-          <p className="text-zinc-500 text-xs">Rarity</p>
+        <div className="bg-white/[0.04] border border-white/[0.06] rounded-lg p-2 transition-colors hover:bg-white/[0.06]">
+          <p className="text-[var(--muted)] text-xs">Rarity</p>
           <p className="text-zinc-200 truncate">{card.rarity}</p>
         </div>
       </div>
@@ -98,16 +98,16 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
 
       {/* Prices — legacy single marketplace (Magic, Yu-Gi-Oh) */}
       {!card.pricing && card.prices && (
-        <div className="bg-zinc-800 rounded-lg p-3">
-          <p className="text-zinc-500 text-xs mb-2">Market Price</p>
+        <div className="bg-white/[0.04] border border-white/[0.06] rounded-lg p-3">
+          <p className="text-[var(--muted)] text-xs mb-2">Market Price</p>
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-bold text-green-400">
               ${card.prices.market?.toFixed(2) ?? "N/A"}
             </span>
-            <span className="text-xs text-zinc-500">{card.prices.currency}</span>
+            <span className="text-xs text-[var(--muted)]">{card.prices.currency}</span>
           </div>
           {(card.prices.low || card.prices.high) && (
-            <div className="flex gap-4 mt-2 text-xs text-zinc-400">
+            <div className="flex gap-4 mt-2 text-xs text-[var(--muted)]">
               {card.prices.low && <span>Low: ${card.prices.low.toFixed(2)}</span>}
               {card.prices.mid && <span>Mid: ${card.prices.mid.toFixed(2)}</span>}
               {card.prices.high && (
@@ -121,15 +121,15 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
       {/* Details */}
       {Object.keys(card.details).length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs text-zinc-500 uppercase tracking-wider">
+          <p className="text-xs text-[var(--muted)] uppercase tracking-wider">
             Details
           </p>
           {Object.entries(card.details).map(([key, value]) => (
             <div
               key={key}
-              className="flex justify-between text-sm bg-zinc-800 rounded px-2 py-1.5 hover:bg-zinc-750 transition-colors"
+              className="flex justify-between text-sm bg-white/[0.04] border border-white/[0.06] rounded px-2 py-1.5 transition-colors hover:bg-white/[0.06]"
             >
-              <span className="text-zinc-400 capitalize">{key}</span>
+              <span className="text-[var(--muted)] capitalize">{key}</span>
               <span className="text-zinc-200">{value}</span>
             </div>
           ))}

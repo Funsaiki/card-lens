@@ -18,7 +18,7 @@ export default function SearchResults({
 }: SearchResultsProps) {
   if (results.length === 0) {
     return (
-      <div className="p-4 text-center text-zinc-500 text-sm">
+      <div className="p-4 text-center text-[var(--muted)] text-sm">
         <p>No results for &quot;{query}&quot;</p>
       </div>
     );
@@ -26,13 +26,13 @@ export default function SearchResults({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
-        <p className="text-xs text-zinc-400">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06]">
+        <p className="text-xs text-[var(--muted)]">
           {results.length} results for &quot;{query}&quot;
         </p>
         <button
           onClick={onClose}
-          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+          className="text-xs text-[var(--muted)] hover:text-zinc-300 transition-colors"
         >
           Close
         </button>
@@ -43,10 +43,10 @@ export default function SearchResults({
           <button
             key={card.id}
             onClick={() => onSelect(card)}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 transition-colors text-left border-b border-zinc-800/50 last:border-b-0"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors text-left border-b border-white/[0.04] last:border-b-0"
           >
             {/* Thumbnail */}
-            <div className="relative w-12 h-[66px] rounded overflow-hidden flex-shrink-0 bg-zinc-800">
+            <div className="relative w-12 h-[66px] rounded overflow-hidden flex-shrink-0 bg-zinc-800/50">
               {card.imageUrl && (
                 <Image
                   src={card.imageUrl}
@@ -64,7 +64,7 @@ export default function SearchResults({
                 {card.name}
               </p>
               {card.set && (
-                <p className="text-xs text-zinc-500 truncate">{card.set}</p>
+                <p className="text-xs text-[var(--muted)] truncate">{card.set}</p>
               )}
               <div className="flex items-center gap-2 mt-0.5">
                 {card.rarity && (

@@ -16,7 +16,7 @@ export default function SessionHistory({
 }: SessionHistoryProps) {
   if (history.length === 0) {
     return (
-      <div className="p-4 text-center text-zinc-500 text-sm">
+      <div className="p-4 text-center text-[var(--muted)] text-sm">
         <p>No cards scanned yet</p>
         <p className="text-xs mt-1">Scanned cards will appear here</p>
       </div>
@@ -25,13 +25,13 @@ export default function SessionHistory({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-700">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06]">
         <h3 className="text-sm font-medium text-zinc-300">
           Session ({history.length})
         </h3>
         <button
           onClick={onClear}
-          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+          className="text-xs text-[var(--muted)] hover:text-zinc-300 transition-colors"
         >
           Clear
         </button>
@@ -42,11 +42,11 @@ export default function SessionHistory({
           <button
             key={`${entry.card.id}-${entry.timestamp}`}
             onClick={() => onSelect(entry)}
-            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-zinc-800/50 transition-all text-left border-b border-zinc-800 last:border-b-0 animate-slide-in-right hover:translate-x-1"
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-white/[0.04] transition-all text-left border-b border-white/[0.04] last:border-b-0 animate-slide-in-right hover:translate-x-1"
             style={{ animationDelay: `${index * 50}ms`, animationFillMode: "both" }}
           >
             {/* Thumbnail */}
-            <div className="relative w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-zinc-800">
+            <div className="relative w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-zinc-800/50">
               {entry.card.imageUrl && (
                 <Image
                   src={entry.card.imageUrl}
@@ -63,7 +63,7 @@ export default function SessionHistory({
               <p className="text-sm text-zinc-200 truncate">
                 {entry.card.name}
               </p>
-              <p className="text-xs text-zinc-500 truncate">
+              <p className="text-xs text-[var(--muted)] truncate">
                 {entry.card.set}
               </p>
               <div className="flex items-center gap-2 mt-0.5">

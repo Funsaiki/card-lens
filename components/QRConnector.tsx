@@ -30,28 +30,28 @@ export default function QRConnector({
   };
 
   const stateColors: Record<ConnectionState, string> = {
-    idle: "text-zinc-400",
+    idle: "text-[var(--muted)]",
     waiting: "text-yellow-400",
-    connecting: "text-blue-400",
+    connecting: "text-indigo-400",
     connected: "text-green-400",
     failed: "text-red-400",
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-6 bg-zinc-800/50 rounded-xl">
-      <h3 className="text-sm font-medium text-zinc-300">
+    <div className="flex flex-col items-center gap-4 p-6 bg-white/[0.03] border border-white/[0.06] rounded-xl backdrop-blur-sm">
+      <h3 className="text-sm font-medium text-zinc-200">
         Connect Phone Camera
       </h3>
 
       {connectionState === "idle" ? (
         <button
           onClick={onConnect}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
+          className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-indigo-600/20"
         >
           Generate QR Code
         </button>
       ) : connectionState === "waiting" || connectionState === "connecting" ? (
-        <div className="bg-white p-3 rounded-xl">
+        <div className="bg-white p-3 rounded-xl shadow-lg shadow-black/20">
           <QRCode value={phoneUrl} size={180} />
         </div>
       ) : connectionState === "connected" ? (
@@ -80,7 +80,7 @@ export default function QRConnector({
       </p>
 
       {(connectionState === "waiting" || connectionState === "connecting") && (
-        <p className="text-xs text-zinc-500 text-center max-w-[200px]">
+        <p className="text-xs text-[var(--muted)] text-center max-w-[200px]">
           Open this URL on your phone or scan the QR code
         </p>
       )}
