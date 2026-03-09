@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const game = searchParams.get("game");
-  const page = parseInt(searchParams.get("page") ?? "1", 10);
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 100);
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+  const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50), 100);
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -56,6 +56,19 @@ export async function POST(request: NextRequest) {
 
   if (!card?.id || !card?.game || !card?.name) {
     return NextResponse.json({ error: "Missing card data" }, { status: 400 });
+  }
+
+  const VALID_GAMES = ["pokemon", "magic", "yugioh", "hololive"];
+  const VALID_CONDITIONS = ["mint", "near_mint", "excellent", "good", "light_played", "played", "poor"];
+
+  if (!VALID_GAMES.includes(card.game)) {
+    return NextResponse.json({ error: "Invalid game" }, { status: 400 });
+  }
+  if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1 || quantity > 9999) {
+    return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
+  }
+  if (!VALID_CONDITIONS.includes(condition)) {
+    return NextResponse.json({ error: "Invalid condition" }, { status: 400 });
   }
 
   // Check if card already exists
