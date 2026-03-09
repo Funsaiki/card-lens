@@ -6,6 +6,9 @@ import Image from "next/image";
 import { useUser } from "@/hooks/useUser";
 import { CardGame, CollectionItem, CONDITION_LABELS, CardCondition } from "@/types";
 import AuthModal from "@/components/AuthModal";
+import SetCollectionView from "@/components/SetCollectionView";
+
+const GAMES_WITH_SETS: CardGame[] = ["pokemon", "hololive"];
 
 const GAMES: { id: CardGame | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -193,6 +196,9 @@ export default function CollectionPage() {
       )}
 
       {/* Content */}
+      {activeGame !== "all" && GAMES_WITH_SETS.includes(activeGame) ? (
+        <SetCollectionView game={activeGame} ownedCards={items} />
+      ) : (
       <div className="p-4">
         {loading ? (
           <div className="flex justify-center py-12">
@@ -310,6 +316,7 @@ export default function CollectionPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
