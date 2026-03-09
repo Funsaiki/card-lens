@@ -140,10 +140,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="text-center py-6 text-xs text-zinc-600">
-        Card Lens &middot; Open source card recognition
-      </footer>
     </main>
   );
 }
