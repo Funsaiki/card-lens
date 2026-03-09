@@ -46,10 +46,17 @@ export default function LegalPage() {
               Intellectual Property
             </h2>
             <p>
-              All content, code, design, and features of Card Lens are the
-              exclusive property of the publisher. All rights reserved.
-              Reproduction, distribution, or modification of any part of this
-              application without prior written consent is strictly prohibited.
+              The source code of Card Lens is released under the{" "}
+              <a
+                href="https://github.com/Funsaiki/card-lens/blob/master/LICENSE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-zinc-300 transition-colors"
+              >
+                MIT License
+              </a>
+              . You are free to use, modify, and distribute the code under the
+              terms of this license.
             </p>
             <p className="mt-2">
               The names, logos, images, and trademarks of the trading card games
