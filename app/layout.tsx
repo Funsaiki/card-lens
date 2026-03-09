@@ -27,9 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-[family-name:var(--font-geist-sans)] antialiased bg-zinc-950 text-zinc-50`}
+        className={`${geistSans.variable} ${geistMono.variable} font-[family-name:var(--font-geist-sans)] antialiased`}
+        suppressHydrationWarning
       >
-        {children}
+        <div className="relative z-10">{children}</div>
       </body>
     </html>
   );

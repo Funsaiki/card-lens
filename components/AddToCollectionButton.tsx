@@ -58,10 +58,10 @@ export default function AddToCollectionButton({ card }: AddToCollectionButtonPro
         disabled={status === "adding"}
         className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg transition-all ${
           status === "added"
-            ? "bg-green-600/20 text-green-400 border border-green-600/30"
+            ? "bg-green-500/10 text-green-400 border border-green-500/20"
             : status === "error"
-              ? "bg-red-600/20 text-red-400 border border-red-600/30"
-              : "bg-blue-600 hover:bg-blue-500 text-white"
+              ? "bg-red-500/10 text-red-400 border border-red-500/20"
+              : "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-sm shadow-indigo-600/20"
         }`}
       >
         {status === "adding" ? (

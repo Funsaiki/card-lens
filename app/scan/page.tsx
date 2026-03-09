@@ -42,6 +42,7 @@ function ScanContent() {
   const [frameHeightPercent, setFrameHeightPercent] = useState(0.75);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
 
   const {
     peerId,
@@ -102,6 +103,7 @@ function ScanContent() {
         video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
+      localStreamRef.current = stream;
       setLocalStream(stream);
     } catch (err) {
       console.error("Failed to access webcam:", err);
@@ -109,11 +111,10 @@ function ScanContent() {
   }, []);
 
   const stopWebcam = useCallback(() => {
-    if (localStream) {
-      localStream.getTracks().forEach((t) => t.stop());
-      setLocalStream(null);
-    }
-  }, [localStream]);
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localStreamRef.current = null;
+    setLocalStream(null);
+  }, []);
 
   const handleSourceChange = useCallback(
     async (source: VideoSource) => {
@@ -140,8 +141,8 @@ function ScanContent() {
       startWebcam();
     }
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      localStream?.getTracks().forEach((t) => t.stop());
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      localStreamRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -191,24 +192,24 @@ function ScanContent() {
     setSidebarTab("info");
   };
 
-  const gameLabel = {
+  const gameLabel = useMemo(() => ({
     pokemon: "Pokemon",
     magic: "MTG",
     yugioh: "Yu-Gi-Oh!",
     hololive: "Hololive",
-  }[game];
+  } as const)[game], [game]);
 
-  const tabs: { id: SidebarTab; label: string; badge?: string }[] = [
+  const tabs = useMemo<{ id: SidebarTab; label: string; badge?: string }[]>(() => [
     { id: "index", label: "Index", badge: indexedCount > 0 ? String(indexedCount) : undefined },
     { id: "info", label: "Info" },
     { id: "results", label: "Results", badge: searchResults.length > 0 ? String(searchResults.length) : undefined },
     { id: "history", label: "History", badge: history.length > 0 ? String(history.length) : undefined },
-  ];
+  ], [indexedCount, searchResults.length, history.length]);
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950">
+    <div className="h-screen flex flex-col">
       {/* Top bar */}
-      <header className="flex items-center justify-between gap-2 px-3 py-2 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm">
+      <header className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md">
         <div className="flex items-center gap-2 flex-shrink-0">
           <Link
             href="/"
@@ -218,9 +219,9 @@ function ScanContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <span className="text-sm font-medium text-zinc-300">{gameLabel}</span>
+          <span className="text-sm font-medium text-zinc-200">{gameLabel}</span>
           {indexedCount > 0 && (
-            <span className="text-[10px] text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded-full hidden sm:inline">
+            <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full hidden sm:inline">
               {indexedCount} indexed
             </span>
           )}
@@ -233,12 +234,12 @@ function ScanContent() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search card..."
-            className="flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+            className="flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
           />
           <button
             type="submit"
             disabled={isSearching}
-            className="px-2.5 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-300 rounded-lg transition-colors flex-shrink-0"
+            className="px-2.5 py-1.5 text-sm bg-white/[0.06] hover:bg-white/[0.1] disabled:opacity-50 text-zinc-300 rounded-lg border border-white/[0.08] transition-colors flex-shrink-0"
           >
             {isSearching ? "..." : "Go"}
           </button>
@@ -286,28 +287,34 @@ function ScanContent() {
         {/* Video area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Video source selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/50">
-            <span className="text-[11px] text-zinc-500">Source:</span>
-            <button
-              onClick={() => handleSourceChange("webcam")}
-              className={`px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
-                videoSource === "webcam"
-                  ? "bg-zinc-700 text-white"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              Webcam
-            </button>
-            <button
-              onClick={() => handleSourceChange("phone")}
-              className={`px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
-                videoSource === "phone"
-                  ? "bg-zinc-700 text-white"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              Phone
-            </button>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02]">
+            <span className="text-[11px] text-[var(--muted)]">Source:</span>
+            <div className="relative flex bg-white/[0.04] rounded-full border border-white/[0.06] p-0.5">
+              {/* Animated pill */}
+              <div
+                className="absolute top-0.5 bottom-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/25 transition-all duration-300 ease-out"
+                style={{
+                  width: "calc(50% - 2px)",
+                  left: videoSource === "webcam" ? "2px" : "calc(50%)",
+                }}
+              />
+              <button
+                onClick={() => handleSourceChange("webcam")}
+                className={`relative z-10 px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
+                  videoSource === "webcam" ? "text-indigo-300" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Webcam
+              </button>
+              <button
+                onClick={() => handleSourceChange("phone")}
+                className={`relative z-10 px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
+                  videoSource === "phone" ? "text-indigo-300" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Phone
+              </button>
+            </div>
             {activeStream && (
               <button
                 onClick={handleStopCamera}
@@ -357,22 +364,30 @@ function ScanContent() {
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <aside className="w-72 xl:w-80 border-l border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0 animate-slide-in-right">
-            {/* Tabs — compact */}
-            <div className="flex border-b border-zinc-800">
+          <aside className="w-72 xl:w-80 border-l border-white/[0.06] bg-white/[0.02] backdrop-blur-sm flex flex-col flex-shrink-0 animate-slide-in-right">
+            {/* Tabs */}
+            <div className="relative flex border-b border-white/[0.06]">
+              {/* Animated indicator */}
+              <div
+                className="absolute bottom-0 h-[2px] bg-indigo-500 rounded-full transition-all duration-300 ease-out"
+                style={{
+                  width: `${100 / tabs.length}%`,
+                  left: `${(tabs.findIndex((t) => t.id === sidebarTab) / tabs.length) * 100}%`,
+                }}
+              />
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSidebarTab(tab.id)}
                   className={`flex-1 py-2 text-[11px] font-medium transition-colors relative ${
                     sidebarTab === tab.id
-                      ? "text-white border-b-2 border-blue-500"
+                      ? "text-white"
                       : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
                   {tab.label}
                   {tab.badge && (
-                    <span className="ml-0.5 text-[9px] text-zinc-400">
+                    <span className="ml-0.5 text-[9px] text-[var(--muted)]">
                       {tab.badge}
                     </span>
                   )}
@@ -422,8 +437,8 @@ export default function ScanPage() {
   return (
     <Suspense
       fallback={
-        <div className="h-screen flex items-center justify-center bg-zinc-950">
-          <p className="text-zinc-400">Loading...</p>
+        <div className="h-screen flex items-center justify-center">
+          <p className="text-[var(--muted)]">Loading...</p>
         </div>
       }
     >

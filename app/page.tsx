@@ -7,14 +7,15 @@ const GAMES = [
     id: "pokemon",
     name: "Pokemon TCG",
     description: "Identify and price your Pokemon cards",
-    color: "from-yellow-500 to-red-500",
-    bgHover: "hover:border-yellow-500/50",
+    gradient: "from-amber-400 via-orange-500 to-red-500",
+    glow: "group-hover:shadow-orange-500/20",
     icon: (
-      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="currentColor">
-        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      /* Pokeball */
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h7.5m5 0H22" />
         <circle cx="12" cy="12" r="3" />
-        <line x1="2" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="15" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -22,11 +23,18 @@ const GAMES = [
     id: "magic",
     name: "Magic: The Gathering",
     description: "Instantly recognize your Magic cards",
-    color: "from-purple-500 to-blue-500",
-    bgHover: "hover:border-purple-500/50",
+    gradient: "from-violet-500 via-purple-500 to-indigo-500",
+    glow: "group-hover:shadow-violet-500/20",
     icon: (
-      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      /* MTG — five-color mana pentagon */
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.2">
+        <polygon points="12,3 20,9.5 17,18.5 7,18.5 4,9.5" />
+        <polygon points="12,3 17,18.5 4,9.5 20,9.5 7,18.5" strokeWidth="0.8" />
+        <circle cx="12" cy="3" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="20" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="17" cy="18.5" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="7" cy="18.5" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="4" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -34,11 +42,17 @@ const GAMES = [
     id: "yugioh",
     name: "Yu-Gi-Oh!",
     description: "Scan and look up your Yu-Gi-Oh cards",
-    color: "from-orange-500 to-yellow-500",
-    bgHover: "hover:border-orange-500/50",
+    gradient: "from-yellow-400 via-amber-500 to-orange-500",
+    glow: "group-hover:shadow-amber-500/20",
     icon: (
-      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" />
+      /* Yu-Gi-Oh — Millennium Eye (Eye of Wdjat) */
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M2 12c2.5-4 6-6 10-6s7.5 2 10 6c-2.5 4-6 6-10 6s-7.5-2-10-6z" />
+        <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="1.2" fill="none" stroke="currentColor" strokeWidth="1" className="text-black" />
+        <path d="M3.5 7.5c2-2.5 5.5-4 8.5-4s6.5 1.5 8.5 4" strokeWidth="2" strokeLinecap="round" />
+        <path d="M11 18l-1.5 4" strokeLinecap="round" />
+        <path d="M11 21.5c0 .8 1.5 1.2 2 0" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -46,12 +60,45 @@ const GAMES = [
     id: "hololive",
     name: "Hololive OCG",
     description: "Browse and identify your Hololive cards",
-    color: "from-cyan-400 to-blue-500",
-    bgHover: "hover:border-cyan-400/50",
+    gradient: "from-cyan-400 via-sky-500 to-blue-500",
+    glow: "group-hover:shadow-cyan-500/20",
     icon: (
-      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M12 2L2 12l10 10 10-10L12 2z" />
-        <circle cx="12" cy="12" r="3" />
+      /* Hololive — stylized diamond logo */
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M12 2L22 12L12 22L2 12Z" />
+        <path d="M12 7L17 12L12 17L7 12Z" />
+        <path d="M12 7V2M17 12H22M12 17V22M7 12H2" strokeWidth="0.8" />
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+];
+
+const FEATURES = [
+  {
+    title: "Use Your Phone",
+    description: "Scan a QR code to stream your phone camera",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+      </svg>
+    ),
+  },
+  {
+    title: "Instant Recognition",
+    description: "AI runs in your browser, no data sent anywhere",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+      </svg>
+    ),
+  },
+  {
+    title: "Prices & Details",
+    description: "See market value and rarity for every card",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
       </svg>
     ),
   },
@@ -61,15 +108,16 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
       <NavBar />
+
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-20">
-        <div className="text-center max-w-2xl mx-auto mb-12 animate-fade-in-up">
-          <h1 className="text-5xl sm:text-6xl font-bold tracking-tight mb-4">
-            <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
+        <div className="text-center max-w-2xl mx-auto mb-14 animate-fade-in-up">
+          <h1 className="text-5xl sm:text-6xl font-bold tracking-tight mb-5">
+            <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
               Card Lens
             </span>
           </h1>
-          <p className="text-lg text-zinc-400 max-w-md mx-auto">
+          <p className="text-lg text-[var(--muted)] max-w-md mx-auto leading-relaxed">
             Recognize trading cards in real-time using your camera.
             Get instant prices, rarity, and details.
           </p>
@@ -81,28 +129,28 @@ export default function Home() {
             <Link
               key={game.id}
               href={`/scan?game=${game.id}`}
-              className={`group relative flex flex-col items-center gap-4 p-8 rounded-2xl border border-zinc-800 bg-zinc-900/50 transition-all duration-300 ${game.bgHover} hover:bg-zinc-900 hover:scale-[1.03] hover:-translate-y-1`}
+              className={`group relative flex flex-col items-center gap-4 p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.05] hover:border-white/[0.1] hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl ${game.glow}`}
             >
               {/* Gradient glow on hover */}
               <div
-                className={`absolute inset-0 bg-gradient-to-br ${game.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`}
+                className={`absolute inset-0 bg-gradient-to-br ${game.gradient} opacity-0 group-hover:opacity-[0.07] rounded-2xl transition-opacity duration-300`}
               />
 
-              <div className="text-zinc-400 group-hover:text-zinc-200 transition-colors">
+              <div className="relative text-white">
                 {game.icon}
               </div>
-              <div className="text-center">
+              <div className="relative text-center">
                 <h2 className="font-semibold text-zinc-200 group-hover:text-white transition-colors">
                   {game.name}
                 </h2>
-                <p className="text-sm text-zinc-500 mt-1">
+                <p className="text-sm text-[var(--muted)] mt-1">
                   {game.description}
                 </p>
               </div>
 
               {/* Arrow */}
               <svg
-                className="w-5 h-5 text-zinc-600 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all"
+                className="relative w-5 h-5 text-zinc-600 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -119,25 +167,14 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl text-center">
-          <div>
-            <p className="text-sm font-medium text-zinc-300">Use Your Phone</p>
-            <p className="text-xs text-zinc-500 mt-1">
-              Scan a QR code to stream your phone camera
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-zinc-300">Instant Recognition</p>
-            <p className="text-xs text-zinc-500 mt-1">
-              AI runs in your browser, no data sent anywhere
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-zinc-300">Prices & Details</p>
-            <p className="text-xs text-zinc-500 mt-1">
-              See market value and rarity for every scanned card
-            </p>
-          </div>
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-3xl w-full">
+          {FEATURES.map((feat) => (
+            <div key={feat.title} className="flex flex-col items-center text-center gap-2 p-4 rounded-xl border border-white/[0.04] bg-white/[0.02]">
+              <div className="text-indigo-400">{feat.icon}</div>
+              <p className="text-sm font-medium text-zinc-300">{feat.title}</p>
+              <p className="text-xs text-[var(--muted)]">{feat.description}</p>
+            </div>
+          ))}
         </div>
       </div>
 

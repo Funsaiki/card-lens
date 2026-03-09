@@ -9,140 +9,7 @@ import {
 } from "@/lib/indexer";
 import { CardEmbeddingEntry, loadModel, onModelStateChange } from "@/lib/embeddings";
 import { CardGame } from "@/types";
-
-// ---------- Custom dropdown ----------
-
-interface SetDropdownProps {
-  sets: GameSet[];
-  indexedSetIds: Set<string>;
-  selectedSet: string;
-  onSelect: (id: string) => void;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
-  disabled: boolean;
-  loading: boolean;
-}
-
-function SetDropdown({
-  sets,
-  indexedSetIds,
-  selectedSet,
-  onSelect,
-  searchQuery,
-  onSearchChange,
-  disabled,
-  loading,
-}: SetDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const selectedName = sets.find((s) => s.id === selectedSet)?.name;
-
-  return (
-    <div ref={containerRef} className="relative">
-      {/* Trigger button */}
-      <button
-        type="button"
-        onClick={() => {
-          if (disabled) return;
-          setOpen((v) => !v);
-          setTimeout(() => inputRef.current?.focus(), 0);
-        }}
-        disabled={disabled}
-        className="w-full flex items-center justify-between px-2 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 hover:border-zinc-600 focus:outline-none focus:border-zinc-500 disabled:opacity-50 transition-colors"
-      >
-        <span className={selectedSet ? "text-zinc-200" : "text-zinc-500"}>
-          {loading
-            ? "Loading sets..."
-            : selectedName
-              ? `${selectedName}`
-              : `Choose a set... (${sets.length})`}
-        </span>
-        <svg
-          className={`w-3 h-3 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Dropdown panel */}
-      {open && (
-        <div className="absolute z-50 mt-1 w-full bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl shadow-black/40 overflow-hidden animate-fade-in">
-          {/* Search input */}
-          <div className="p-1.5 border-b border-zinc-700">
-            <input
-              ref={inputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search sets..."
-              className="w-full px-2 py-1 text-xs bg-zinc-900 border border-zinc-700 rounded text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
-            />
-          </div>
-
-          {/* Options list */}
-          <div className="max-h-48 overflow-y-auto">
-            {sets.length === 0 ? (
-              <p className="px-3 py-2 text-[11px] text-zinc-500">No sets found</p>
-            ) : (
-              sets.map((set) => {
-                const isIndexed = indexedSetIds.has(set.id);
-                const isSelected = set.id === selectedSet;
-                return (
-                  <button
-                    key={set.id}
-                    type="button"
-                    disabled={isIndexed}
-                    onClick={() => {
-                      onSelect(set.id);
-                      setOpen(false);
-                      onSearchChange("");
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-left transition-colors ${
-                      isIndexed
-                        ? "text-zinc-600 cursor-default"
-                        : isSelected
-                          ? "bg-blue-600/20 text-blue-300"
-                          : "text-zinc-300 hover:bg-zinc-700"
-                    }`}
-                  >
-                    <span className="truncate">
-                      {set.name}
-                      <span className="text-zinc-500 ml-1">({set.cardCount.total})</span>
-                    </span>
-                    {isIndexed && (
-                      <svg className="w-3 h-3 text-green-500 flex-shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------- SetIndexer ----------
+import SetDropdown from "./SetDropdown";
 
 interface IndexedSetInfo {
   setId: string;
@@ -292,7 +159,7 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
   if (game !== "pokemon" && game !== "hololive") {
     return (
       <div className="p-4 text-center">
-        <p className="text-zinc-400 text-sm">
+        <p className="text-[var(--muted)] text-sm">
           Indexing is only available for Pokemon TCG and Hololive OCG for now.
         </p>
       </div>
@@ -311,15 +178,15 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
       {/* DB loading indicator */}
       {dbLoading ? (
         <div className="flex items-center gap-2 py-2">
-          <span className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-[11px] text-zinc-400">Loading saved database...</p>
+          <span className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-[11px] text-[var(--muted)]">Loading saved database...</p>
         </div>
       ) : indexedCount > 0 && !indexing ? (
         <p className="text-[11px] text-green-400/80">
           {indexedCount} cards loaded. You can add more sets below.
         </p>
       ) : (
-        <p className="text-[11px] text-zinc-500 leading-relaxed">
+        <p className="text-[11px] text-[var(--muted)] leading-relaxed">
           Index a set to enable camera recognition.
         </p>
       )}
@@ -341,7 +208,7 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
         <button
           onClick={handleIndex}
           disabled={!selectedSet || indexing || dbLoading || indexedSetIds.has(selectedSet)}
-          className="flex-1 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white rounded-lg transition-colors"
+          className="flex-1 px-3 py-1.5 text-xs bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white rounded-lg transition-all"
         >
           {indexing && !indexAllProgress ? "Indexing..." : "Index Set"}
         </button>
@@ -350,7 +217,7 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
             onClick={handleIndexAll}
             disabled={unindexedSets.length === 0 || indexing || dbLoading}
             title={`Index ${unindexedSets.length} remaining set${unindexedSets.length !== 1 ? "s" : ""}`}
-            className="px-3 py-1.5 text-xs bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:hover:bg-purple-600 text-white rounded-lg transition-colors whitespace-nowrap"
+            className="px-3 py-1.5 text-xs bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg transition-colors whitespace-nowrap"
           >
             All ({unindexedSets.length})
           </button>
@@ -382,13 +249,13 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
       {/* Progress bar */}
       {indexing && progress && (
         <div className="space-y-1">
-          <div className="flex justify-between text-[10px] text-zinc-400">
+          <div className="flex justify-between text-[10px] text-[var(--muted)]">
             <span className="truncate max-w-[140px]">{progress.cardName}</span>
             <span>{progress.current}/{progress.total}</span>
           </div>
-          <div className="w-full bg-zinc-700 rounded-full h-1">
+          <div className="w-full bg-white/[0.06] rounded-full h-1">
             <div
-              className="bg-blue-500 h-1 rounded-full transition-all duration-200"
+              className="bg-gradient-to-r from-indigo-500 to-violet-500 h-1 rounded-full transition-all duration-200"
               style={{ width: `${(progress.current / progress.total) * 100}%` }}
             />
           </div>
@@ -399,25 +266,25 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
 
       {/* Indexed sets list */}
       {indexedSets.length > 0 && !dbLoading && (
-        <div className="space-y-1 pt-1 border-t border-zinc-800">
-          <p className="text-[11px] text-zinc-500 font-medium">Indexed sets:</p>
+        <div className="space-y-1 pt-1 border-t border-white/[0.06]">
+          <p className="text-[11px] text-[var(--muted)] font-medium">Indexed sets:</p>
           {indexedSets.map(({ setId, count }) => {
             const setInfo = sets.find((s) => s.id === setId);
             return (
               <div
                 key={setId}
-                className="flex items-center justify-between bg-zinc-800/50 rounded px-2 py-1.5 animate-fade-in hover:bg-zinc-800 transition-colors"
+                className="flex items-center justify-between bg-white/[0.03] border border-white/[0.04] rounded px-2 py-1.5 animate-fade-in hover:bg-white/[0.06] transition-colors"
               >
                 <div className="min-w-0">
                   <p className="text-[11px] text-zinc-300 truncate">
                     {setInfo?.name ?? setId}
                   </p>
-                  <p className="text-[10px] text-zinc-500">{count} cards</p>
+                  <p className="text-[10px] text-[var(--muted)]">{count} cards</p>
                 </div>
                 <button
                   onClick={() => onRemoveSet(setId)}
                   disabled={indexing}
-                  className="text-zinc-500 hover:text-red-400 transition-colors p-1 flex-shrink-0 disabled:opacity-50"
+                  className="text-[var(--muted)] hover:text-red-400 transition-colors p-1 flex-shrink-0 disabled:opacity-50"
                   title="Remove set"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -431,7 +298,7 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
       )}
 
       {indexedCount > 0 && !indexing && !dbLoading && (
-        <p className="text-[11px] text-zinc-500">
+        <p className="text-[11px] text-[var(--muted)]">
           Point camera at a card from the indexed set.
         </p>
       )}

@@ -74,10 +74,16 @@ function PhoneContent() {
 
   if (!remotePeerId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/20">
+            <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+            </svg>
+          </div>
           <h1 className="text-xl font-bold text-white mb-2">Card Lens</h1>
-          <p className="text-zinc-400 text-sm">
+          <p className="text-[var(--muted)] text-sm">
             Scan the QR code on your PC to connect this phone as a camera.
           </p>
         </div>
@@ -86,10 +92,18 @@ function PhoneContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-950">
+    <div className="min-h-screen flex flex-col">
       {/* Status bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-zinc-900">
-        <h1 className="text-sm font-medium text-white">Card Lens</h1>
+      <div className="flex items-center justify-between px-4 py-3 bg-white/[0.02] border-b border-white/[0.06] backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+            </svg>
+          </div>
+          <h1 className="text-sm font-medium text-white">Card Lens</h1>
+        </div>
         <div className="flex items-center gap-2">
           <span
             className={`w-2 h-2 rounded-full ${
@@ -102,7 +116,7 @@ function PhoneContent() {
                     : "bg-zinc-500"
             }`}
           />
-          <span className="text-xs text-zinc-400 capitalize">
+          <span className="text-xs text-[var(--muted)] capitalize">
             {connectionState}
           </span>
         </div>
@@ -136,7 +150,7 @@ function PhoneContent() {
           <div className="absolute inset-0 flex items-center justify-center">
             <button
               onClick={startCamera}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium text-lg transition-colors shadow-lg shadow-blue-600/20"
+              className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-medium text-lg transition-all shadow-lg shadow-indigo-600/30"
             >
               Start Camera
             </button>
@@ -145,7 +159,7 @@ function PhoneContent() {
 
         {error && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="text-center bg-zinc-900 rounded-xl p-6 max-w-sm">
+            <div className="text-center bg-[var(--surface)] border border-white/[0.08] rounded-xl p-6 max-w-sm">
               <p className="text-red-400 text-sm mb-4">{error}</p>
               <button
                 onClick={() => {
@@ -153,7 +167,7 @@ function PhoneContent() {
                   startedRef.current = false;
                   startCamera();
                 }}
-                className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm transition-colors"
+                className="px-6 py-2 bg-white/[0.06] hover:bg-white/[0.1] text-white rounded-lg text-sm border border-white/[0.08] transition-colors"
               >
                 Retry
               </button>
@@ -163,8 +177,8 @@ function PhoneContent() {
       </div>
 
       {/* Bottom info */}
-      <div className="px-4 py-3 bg-zinc-900 text-center">
-        <p className="text-xs text-zinc-500">
+      <div className="px-4 py-3 bg-white/[0.02] border-t border-white/[0.06] text-center">
+        <p className="text-xs text-[var(--muted)]">
           {connectionState === "connected"
             ? "Camera feed is being sent to your PC"
             : "Point your camera at a trading card"}
@@ -178,8 +192,8 @@ export default function PhonePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-          <p className="text-zinc-400">Loading...</p>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-[var(--muted)]">Loading...</p>
         </div>
       }
     >

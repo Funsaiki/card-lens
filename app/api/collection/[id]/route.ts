@@ -18,7 +18,7 @@ export async function PATCH(
   const body = await request.json();
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
-  const VALID_CONDITIONS = ["mint", "near_mint", "excellent", "good", "light_played", "played", "poor"];
+  const VALID_CONDITIONS = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
 
   if (body.quantity !== undefined) {
     if (typeof body.quantity !== "number" || !Number.isInteger(body.quantity) || body.quantity < 1 || body.quantity > 9999) {

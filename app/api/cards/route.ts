@@ -34,6 +34,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validate input lengths to prevent abuse
+    if (query && query.length > 200) {
+      return NextResponse.json(
+        { error: "Query too long (max 200 characters)" },
+        { status: 400 }
+      );
+    }
+    if (cardId && cardId.length > 100) {
+      return NextResponse.json(
+        { error: "Card ID too long (max 100 characters)" },
+        { status: 400 }
+      );
+    }
+
     // Fetch single card by ID
     if (cardId) {
       let card = null;
