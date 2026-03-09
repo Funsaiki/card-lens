@@ -6,6 +6,7 @@ create table public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   display_name text,
   avatar_url text,
+  accepted_terms_at timestamptz,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null
 );
@@ -23,7 +24,7 @@ create policy "Users can insert own profile"
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, display_name, avatar_url)
+  insert into public.profiles (id, display_name, avatar_url, accepted_terms_at)
   values (
     new.id,
     coalesce(
@@ -32,7 +33,8 @@ begin
       new.raw_user_meta_data->>'name',
       split_part(new.email, '@', 1)
     ),
-    new.raw_user_meta_data->>'avatar_url'
+    new.raw_user_meta_data->>'avatar_url',
+    now()
   );
   return new;
 end;
@@ -69,6 +71,13 @@ create policy "Users can manage own collection"
 
 create index idx_collection_user_game on public.collection_items(user_id, game);
 create index idx_collection_card_id on public.collection_items(card_id);
+
+-- Migration: add accepted_terms_at to existing profiles
+-- Run this if you already have the profiles table:
+--
+-- alter table public.profiles add column if not exists accepted_terms_at timestamptz;
+--
+-- Then update the trigger with the new handle_new_user() function above.
 
 -- 3. Stats view
 create view public.collection_stats as
