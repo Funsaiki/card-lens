@@ -25,6 +25,7 @@ export default function UserMenu({ user }: UserMenuProps) {
   }, [open]);
 
   const displayName =
+    user.user_metadata?.display_name ??
     user.user_metadata?.full_name ??
     user.user_metadata?.name ??
     user.email?.split("@")[0] ??

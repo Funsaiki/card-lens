@@ -14,6 +14,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   const [tab, setTab] = useState<AuthTab>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
@@ -52,11 +53,19 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           window.location.reload();
         }
       } else {
+        if (!username.trim()) {
+          setError("Please choose a username");
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
+            data: {
+              display_name: username.trim(),
+            },
           },
         });
         if (error) {
@@ -104,7 +113,9 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
               </svg>
               <p className="text-sm text-zinc-300">Check your email</p>
-              <p className="text-xs text-zinc-500 mt-1">Click the link to confirm your account</p>
+              <p className="text-xs text-zinc-500 mt-1">
+                Click the link sent by Card Lens to confirm your account
+              </p>
             </div>
           ) : (
             <>
@@ -142,6 +153,18 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
 
               {/* Email form */}
               <form onSubmit={handleEmailSubmit} className="space-y-3">
+                {tab === "signup" && (
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Username"
+                    required
+                    minLength={3}
+                    maxLength={30}
+                    className="w-full px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                  />
+                )}
                 <input
                   type="email"
                   value={email}
