@@ -192,19 +192,19 @@ function ScanContent() {
     setSidebarTab("info");
   };
 
-  const gameLabel = {
+  const gameLabel = useMemo(() => ({
     pokemon: "Pokemon",
     magic: "MTG",
     yugioh: "Yu-Gi-Oh!",
     hololive: "Hololive",
-  }[game];
+  } as const)[game], [game]);
 
-  const tabs: { id: SidebarTab; label: string; badge?: string }[] = [
+  const tabs = useMemo<{ id: SidebarTab; label: string; badge?: string }[]>(() => [
     { id: "index", label: "Index", badge: indexedCount > 0 ? String(indexedCount) : undefined },
     { id: "info", label: "Info" },
     { id: "results", label: "Results", badge: searchResults.length > 0 ? String(searchResults.length) : undefined },
     { id: "history", label: "History", badge: history.length > 0 ? String(history.length) : undefined },
-  ];
+  ], [indexedCount, searchResults.length, history.length]);
 
   return (
     <div className="h-screen flex flex-col">

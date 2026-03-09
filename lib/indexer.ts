@@ -72,14 +72,15 @@ async function fetchHololiveSets(): Promise<GameSet[]> {
 
 async function fetchHololiveSetCards(setId: string): Promise<SetCard[]> {
   const cards = await loadHololiveData();
-  return cards
-    .filter((c) => c.products.includes(setId))
-    .map((c) => ({
-      id: c.cardno,
-      localId: c.cardno,
-      name: c.name,
-      image: c.img,
-    }));
+  const seen = new Set<string>();
+  const result: SetCard[] = [];
+  for (const c of cards) {
+    if (c.products.includes(setId) && !seen.has(c.cardno)) {
+      seen.add(c.cardno);
+      result.push({ id: c.cardno, localId: c.cardno, name: c.name, image: c.img });
+    }
+  }
+  return result;
 }
 
 function getHololiveProxiedImageUrl(card: SetCard): string {

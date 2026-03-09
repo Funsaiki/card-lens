@@ -230,7 +230,7 @@ export default function CollectionPage() {
 
       {/* Content */}
       {activeGame !== "all" && GAMES_WITH_SETS.includes(activeGame) ? (
-        <SetCollectionView game={activeGame} ownedCards={items} />
+        <SetCollectionView game={activeGame} ownedCards={items} onCardAdded={fetchCollection} />
       ) : (
       <div className="p-4">
         {loading ? (
