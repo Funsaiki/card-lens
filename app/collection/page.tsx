@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUser } from "@/hooks/useUser";
@@ -49,6 +49,52 @@ function mapItem(raw: RawCollectionItem): CollectionItem {
     notes: raw.notes,
     addedAt: raw.added_at,
   };
+}
+
+function GameTabs({ games, activeGame, onSelect }: {
+  games: typeof GAMES;
+  activeGame: CardGame | "all";
+  onSelect: (id: CardGame | "all") => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [pill, setPill] = useState({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    const btn = btnRefs.current.get(activeGame);
+    const container = containerRef.current;
+    if (btn && container) {
+      const cr = container.getBoundingClientRect();
+      const br = btn.getBoundingClientRect();
+      setPill({ left: br.left - cr.left, width: br.width });
+    }
+  }, [activeGame]);
+
+  const activeColor = games.find((g) => g.id === activeGame)?.color ?? "from-zinc-400 to-zinc-500";
+
+  return (
+    <div ref={containerRef} className="relative flex gap-1.5 px-4 py-2.5 border-b border-white/[0.06] overflow-x-auto">
+      {/* Animated pill */}
+      <div
+        className={`absolute top-2 rounded-full bg-gradient-to-r ${activeColor} shadow-sm transition-all duration-300 ease-out`}
+        style={{ left: pill.left, width: pill.width, height: "calc(100% - 16px)" }}
+      />
+      {games.map((g) => (
+        <button
+          key={g.id}
+          ref={(el) => { if (el) btnRefs.current.set(g.id, el); }}
+          onClick={() => onSelect(g.id)}
+          className={`relative z-10 px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
+            activeGame === g.id
+              ? "text-white"
+              : "text-zinc-500 hover:text-zinc-300"
+          }`}
+        >
+          {g.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export default function CollectionPage() {
@@ -165,21 +211,7 @@ export default function CollectionPage() {
       </header>
 
       {/* Game tabs */}
-      <div className="flex gap-1.5 px-4 py-2.5 border-b border-white/[0.06] overflow-x-auto">
-        {GAMES.map((g) => (
-          <button
-            key={g.id}
-            onClick={() => setActiveGame(g.id)}
-            className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-all ${
-              activeGame === g.id
-                ? `bg-gradient-to-r ${g.color} text-white shadow-sm`
-                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
-            }`}
-          >
-            {g.label}
-          </button>
-        ))}
-      </div>
+      <GameTabs games={GAMES} activeGame={activeGame} onSelect={setActiveGame} />
 
       {/* Stats */}
       {!loading && items.length > 0 && (

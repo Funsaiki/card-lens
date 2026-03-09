@@ -42,6 +42,7 @@ function ScanContent() {
   const [frameHeightPercent, setFrameHeightPercent] = useState(0.75);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
 
   const {
     peerId,
@@ -102,6 +103,7 @@ function ScanContent() {
         video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
+      localStreamRef.current = stream;
       setLocalStream(stream);
     } catch (err) {
       console.error("Failed to access webcam:", err);
@@ -109,11 +111,10 @@ function ScanContent() {
   }, []);
 
   const stopWebcam = useCallback(() => {
-    if (localStream) {
-      localStream.getTracks().forEach((t) => t.stop());
-      setLocalStream(null);
-    }
-  }, [localStream]);
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localStreamRef.current = null;
+    setLocalStream(null);
+  }, []);
 
   const handleSourceChange = useCallback(
     async (source: VideoSource) => {
@@ -140,8 +141,8 @@ function ScanContent() {
       startWebcam();
     }
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      localStream?.getTracks().forEach((t) => t.stop());
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      localStreamRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -288,26 +289,32 @@ function ScanContent() {
           {/* Video source selector */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02]">
             <span className="text-[11px] text-[var(--muted)]">Source:</span>
-            <button
-              onClick={() => handleSourceChange("webcam")}
-              className={`px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
-                videoSource === "webcam"
-                  ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/20"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              Webcam
-            </button>
-            <button
-              onClick={() => handleSourceChange("phone")}
-              className={`px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
-                videoSource === "phone"
-                  ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/20"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              Phone
-            </button>
+            <div className="relative flex bg-white/[0.04] rounded-full border border-white/[0.06] p-0.5">
+              {/* Animated pill */}
+              <div
+                className="absolute top-0.5 bottom-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/25 transition-all duration-300 ease-out"
+                style={{
+                  width: "calc(50% - 2px)",
+                  left: videoSource === "webcam" ? "2px" : "calc(50%)",
+                }}
+              />
+              <button
+                onClick={() => handleSourceChange("webcam")}
+                className={`relative z-10 px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
+                  videoSource === "webcam" ? "text-indigo-300" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Webcam
+              </button>
+              <button
+                onClick={() => handleSourceChange("phone")}
+                className={`relative z-10 px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
+                  videoSource === "phone" ? "text-indigo-300" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Phone
+              </button>
+            </div>
             {activeStream && (
               <button
                 onClick={handleStopCamera}
@@ -359,14 +366,22 @@ function ScanContent() {
         {sidebarOpen && (
           <aside className="w-72 xl:w-80 border-l border-white/[0.06] bg-white/[0.02] backdrop-blur-sm flex flex-col flex-shrink-0 animate-slide-in-right">
             {/* Tabs */}
-            <div className="flex border-b border-white/[0.06]">
+            <div className="relative flex border-b border-white/[0.06]">
+              {/* Animated indicator */}
+              <div
+                className="absolute bottom-0 h-[2px] bg-indigo-500 rounded-full transition-all duration-300 ease-out"
+                style={{
+                  width: `${100 / tabs.length}%`,
+                  left: `${(tabs.findIndex((t) => t.id === sidebarTab) / tabs.length) * 100}%`,
+                }}
+              />
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSidebarTab(tab.id)}
                   className={`flex-1 py-2 text-[11px] font-medium transition-colors relative ${
                     sidebarTab === tab.id
-                      ? "text-white border-b-2 border-indigo-500"
+                      ? "text-white"
                       : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >

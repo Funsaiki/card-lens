@@ -10,11 +10,12 @@ const GAMES = [
     gradient: "from-amber-400 via-orange-500 to-red-500",
     glow: "group-hover:shadow-orange-500/20",
     icon: (
-      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="currentColor">
-        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      /* Pokeball */
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h7.5m5 0H22" />
         <circle cx="12" cy="12" r="3" />
-        <line x1="2" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="15" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -25,8 +26,15 @@ const GAMES = [
     gradient: "from-violet-500 via-purple-500 to-indigo-500",
     glow: "group-hover:shadow-violet-500/20",
     icon: (
-      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      /* MTG — five-color mana pentagon */
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.2">
+        <polygon points="12,3 20,9.5 17,18.5 7,18.5 4,9.5" />
+        <polygon points="12,3 17,18.5 4,9.5 20,9.5 7,18.5" strokeWidth="0.8" />
+        <circle cx="12" cy="3" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="20" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="17" cy="18.5" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="7" cy="18.5" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="4" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -37,8 +45,14 @@ const GAMES = [
     gradient: "from-yellow-400 via-amber-500 to-orange-500",
     glow: "group-hover:shadow-amber-500/20",
     icon: (
+      /* Yu-Gi-Oh — Millennium Eye (Eye of Wdjat) */
       <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" />
+        <path d="M2 12c2.5-4 6-6 10-6s7.5 2 10 6c-2.5 4-6 6-10 6s-7.5-2-10-6z" />
+        <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="1.2" fill="none" stroke="currentColor" strokeWidth="1" className="text-black" />
+        <path d="M3.5 7.5c2-2.5 5.5-4 8.5-4s6.5 1.5 8.5 4" strokeWidth="2" strokeLinecap="round" />
+        <path d="M11 18l-1.5 4" strokeLinecap="round" />
+        <path d="M11 21.5c0 .8 1.5 1.2 2 0" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -49,9 +63,12 @@ const GAMES = [
     gradient: "from-cyan-400 via-sky-500 to-blue-500",
     glow: "group-hover:shadow-cyan-500/20",
     icon: (
+      /* Hololive — stylized diamond logo */
       <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M12 2L2 12l10 10 10-10L12 2z" />
-        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2L22 12L12 22L2 12Z" />
+        <path d="M12 7L17 12L12 17L7 12Z" />
+        <path d="M12 7V2M17 12H22M12 17V22M7 12H2" strokeWidth="0.8" />
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -119,7 +136,7 @@ export default function Home() {
                 className={`absolute inset-0 bg-gradient-to-br ${game.gradient} opacity-0 group-hover:opacity-[0.07] rounded-2xl transition-opacity duration-300`}
               />
 
-              <div className={`relative bg-gradient-to-br ${game.gradient} bg-clip-text text-transparent`}>
+              <div className="relative text-white">
                 {game.icon}
               </div>
               <div className="relative text-center">
