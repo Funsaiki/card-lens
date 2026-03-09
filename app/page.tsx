@@ -5,7 +5,7 @@ const GAMES = [
   {
     id: "pokemon",
     name: "Pokemon TCG",
-    description: "Scan Pokemon trading cards",
+    description: "Identifiez et estimez vos cartes Pokemon",
     color: "from-yellow-500 to-red-500",
     bgHover: "hover:border-yellow-500/50",
     icon: (
@@ -20,7 +20,7 @@ const GAMES = [
   {
     id: "magic",
     name: "Magic: The Gathering",
-    description: "Scan MTG cards",
+    description: "Reconnaissez vos cartes Magic instantanement",
     color: "from-purple-500 to-blue-500",
     bgHover: "hover:border-purple-500/50",
     icon: (
@@ -32,7 +32,7 @@ const GAMES = [
   {
     id: "yugioh",
     name: "Yu-Gi-Oh!",
-    description: "Scan Yu-Gi-Oh cards",
+    description: "Scannez et retrouvez vos cartes Yu-Gi-Oh",
     color: "from-orange-500 to-yellow-500",
     bgHover: "hover:border-orange-500/50",
     icon: (
@@ -44,7 +44,7 @@ const GAMES = [
   {
     id: "hololive",
     name: "Hololive OCG",
-    description: "Scan Hololive cards",
+    description: "Explorez votre collection Hololive OCG",
     color: "from-cyan-400 to-blue-500",
     bgHover: "hover:border-cyan-400/50",
     icon: (
@@ -120,21 +120,21 @@ export default function Home() {
         {/* Features */}
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl text-center">
           <div>
-            <p className="text-sm font-medium text-zinc-300">Phone as Camera</p>
+            <p className="text-sm font-medium text-zinc-300">Utilisez votre telephone</p>
             <p className="text-xs text-zinc-500 mt-1">
-              Connect via QR code + WebRTC
+              Scannez un QR code pour streamer la camera de votre telephone
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-zinc-300">Real-time Recognition</p>
+            <p className="text-sm font-medium text-zinc-300">Reconnaissance instantanee</p>
             <p className="text-xs text-zinc-500 mt-1">
-              Client-side processing, no server needed
+              IA embarquee dans le navigateur, aucun envoi de donnees
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-zinc-300">Stream-ready</p>
+            <p className="text-sm font-medium text-zinc-300">Prix et details</p>
             <p className="text-xs text-zinc-500 mt-1">
-              Works with OBS and screen sharing
+              Consultez la valeur et la rarete de chaque carte scannee
             </p>
           </div>
         </div>
