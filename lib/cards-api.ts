@@ -140,81 +140,84 @@ export function parsePokemonSummary(raw: TCGdexCardSummary): CardData {
   };
 }
 
-// ---------- Scryfall API (Magic: The Gathering) ----------
+// ---------- OPTCG API (One Piece TCG) ----------
 
-interface ScryfallCard {
-  id: string;
-  name: string;
+interface OPTCGCard {
+  card_name: string;
+  card_set_id: string;
   set_name: string;
+  set_id: string;
   rarity: string;
-  image_uris?: { normal: string; large: string };
-  prices: { usd?: string; usd_foil?: string };
-  type_line?: string;
-  mana_cost?: string;
-  oracle_text?: string;
+  card_type: string;
+  card_color: string;
+  card_cost?: string;
+  card_power?: string;
+  card_text?: string;
+  sub_types?: string;
+  attribute?: string;
+  life?: string;
+  card_image: string;
+  market_price?: number;
+  inventory_price?: number;
 }
 
-export function parseMagicCard(raw: ScryfallCard): CardData {
+export function parseOnePieceCard(raw: OPTCGCard): CardData {
   return {
-    id: raw.id,
-    name: raw.name,
-    game: "magic",
-    set: raw.set_name,
-    rarity: raw.rarity,
-    imageUrl: raw.image_uris?.large ?? raw.image_uris?.normal ?? "",
-    prices: raw.prices.usd
-      ? {
-          market: parseFloat(raw.prices.usd),
-          currency: "USD",
-        }
+    id: raw.card_set_id,
+    name: raw.card_name,
+    game: "onepiece",
+    set: raw.set_name ?? "Unknown",
+    rarity: raw.rarity ?? "Unknown",
+    imageUrl: raw.card_image ?? "",
+    prices: raw.market_price
+      ? { market: raw.market_price, currency: "USD" }
       : undefined,
     details: {
-      ...(raw.type_line ? { type: raw.type_line } : {}),
-      ...(raw.mana_cost ? { manaCost: raw.mana_cost } : {}),
-      ...(raw.oracle_text ? { text: raw.oracle_text } : {}),
+      type: raw.card_type,
+      color: raw.card_color,
+      ...(raw.card_cost ? { cost: raw.card_cost } : {}),
+      ...(raw.card_power ? { power: raw.card_power } : {}),
+      ...(raw.attribute ? { attribute: raw.attribute } : {}),
+      ...(raw.sub_types ? { traits: raw.sub_types } : {}),
     },
   };
 }
 
-// ---------- YGOProdeck API (Yu-Gi-Oh) ----------
+// ---------- Scrydex API (Riftbound) ----------
 
-interface YGOCard {
-  id: number;
+interface ScrydexCard {
+  id: string;
   name: string;
-  type: string;
-  race: string;
-  card_images: { image_url: string; image_url_small: string }[];
-  card_sets?: { set_name: string; set_rarity: string }[];
-  card_prices?: { tcgplayer_price: string; cardmarket_price: string }[];
-  atk?: number;
-  def?: number;
-  level?: number;
-  desc?: string;
+  domain?: string;
+  type?: string;
+  rarity?: string;
+  artist?: string;
+  rules?: string[];
+  images?: { small?: string; medium?: string; large?: string }[];
+  expansion?: { id: string; name: string; code?: string };
+  variants?: { prices?: { market?: number; low?: number }[] }[];
 }
 
-export function parseYugiohCard(raw: YGOCard): CardData {
-  const price = raw.card_prices?.[0];
-  const set = raw.card_sets?.[0];
+export function parseRiftboundCard(raw: ScrydexCard): CardData {
+  const img = raw.images?.[0];
+  const variant = raw.variants?.[0];
+  const price = variant?.prices?.[0];
 
   return {
-    id: String(raw.id),
+    id: raw.id,
     name: raw.name,
-    game: "yugioh",
-    set: set?.set_name ?? "Unknown",
-    rarity: set?.set_rarity ?? "Unknown",
-    imageUrl: raw.card_images[0]?.image_url ?? "",
-    prices: price
-      ? {
-          market: parseFloat(price.tcgplayer_price) || undefined,
-          currency: "USD",
-        }
+    game: "riftbound",
+    set: raw.expansion?.name ?? "Unknown",
+    rarity: raw.rarity ?? "Unknown",
+    imageUrl: img?.large ?? img?.medium ?? img?.small ?? "",
+    prices: price?.market
+      ? { market: price.market, currency: "USD" }
       : undefined,
     details: {
-      type: raw.type,
-      race: raw.race,
-      ...(raw.atk !== undefined ? { atk: String(raw.atk) } : {}),
-      ...(raw.def !== undefined ? { def: String(raw.def) } : {}),
-      ...(raw.level !== undefined ? { level: String(raw.level) } : {}),
+      ...(raw.type ? { type: raw.type } : {}),
+      ...(raw.domain ? { domain: raw.domain } : {}),
+      ...(raw.artist ? { artist: raw.artist } : {}),
+      ...(raw.rules?.length ? { text: raw.rules.join("\n") } : {}),
     },
   };
 }

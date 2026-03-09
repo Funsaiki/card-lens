@@ -194,8 +194,8 @@ function ScanContent() {
 
   const gameLabel = useMemo(() => ({
     pokemon: "Pokemon",
-    magic: "MTG",
-    yugioh: "Yu-Gi-Oh!",
+    onepiece: "One Piece",
+    riftbound: "Riftbound",
     hololive: "Hololive",
   } as const)[game], [game]);
 

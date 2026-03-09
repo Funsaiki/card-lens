@@ -8,15 +8,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "cards.scryfall.io",
+        hostname: "www.optcgapi.com",
       },
       {
         protocol: "https",
-        hostname: "c1.scryfall.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images.ygoprodeck.com",
+        hostname: "api.scrydex.com",
       },
       {
         protocol: "https",

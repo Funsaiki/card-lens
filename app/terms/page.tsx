@@ -45,8 +45,8 @@ export default function TermsPage() {
             <p>Card Lens provides the following features:</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
               <li>
-                Trading card recognition (Pok&eacute;mon, Magic: The Gathering,
-                Yu-Gi-Oh!, Hololive OCG) via your device&apos;s camera
+                Trading card recognition (Pok&eacute;mon, One Piece, Riftbound,
+                Hololive OCG) via your device&apos;s camera
               </li>
               <li>
                 Display of card information (name, set, rarity) and indicative

@@ -69,14 +69,14 @@ export default function LegalPage() {
                 &mdash; Nintendo / Creatures Inc. / GAME FREAK Inc.
               </li>
               <li>
-                <strong className="text-zinc-300">
-                  Magic: The Gathering
-                </strong>{" "}
-                &mdash; Wizards of the Coast LLC
+                <strong className="text-zinc-300">One Piece</strong> &mdash;
+                Shueisha / Toei Animation / Bandai
               </li>
               <li>
-                <strong className="text-zinc-300">Yu-Gi-Oh!</strong> &mdash;
-                Konami Digital Entertainment
+                <strong className="text-zinc-300">
+                  Riftbound / League of Legends
+                </strong>{" "}
+                &mdash; Riot Games, Inc.
               </li>
               <li>
                 <strong className="text-zinc-300">Hololive OCG</strong> &mdash;
@@ -95,7 +95,7 @@ export default function LegalPage() {
             </h2>
             <p>
               Pricing information displayed is sourced from third-party APIs
-              (TCGdex, Scryfall, YGOProdeck) and is provided for informational
+              (TCGdex, OPTCG API, Scrydex) and is provided for informational
               purposes only. Card Lens does not guarantee the accuracy or
               completeness of this data and shall not be held responsible for any
               decisions made based on this information.
