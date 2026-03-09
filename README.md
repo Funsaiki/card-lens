@@ -136,6 +136,6 @@ types/                  # Types TypeScript partages
 | Yu-Gi-Oh! | [YGOProdeck](https://ygoprodeck.com/api-guide/) | TCGPlayer |
 | Hololive | Donnees JSON embarquees | — |
 
-## Licence
+## License
 
-MIT
+All rights reserved.

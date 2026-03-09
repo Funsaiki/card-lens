@@ -3,7 +3,7 @@ import NavBar from "@/components/NavBar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Conditions Générales d'Utilisation - Card Lens",
+  title: "Terms of Use - Card Lens",
 };
 
 export default function TermsPage() {
@@ -15,184 +15,169 @@ export default function TermsPage() {
           href="/"
           className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
         >
-          &larr; Retour à l&apos;accueil
+          &larr; Back to home
         </Link>
 
-        <h1 className="text-3xl font-bold mt-6 mb-2">
-          Conditions Générales d&apos;Utilisation
-        </h1>
+        <h1 className="text-3xl font-bold mt-6 mb-2">Terms of Use</h1>
         <p className="text-xs text-zinc-500 mb-8">
-          Dernière mise à jour : 9 mars 2026
+          Last updated: March 9, 2026
         </p>
 
         <div className="space-y-8 text-sm text-zinc-400 leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              1. Objet
+              1. Purpose
             </h2>
             <p>
-              Les présentes Conditions Générales d&apos;Utilisation (ci-après
-              « CGU ») régissent l&apos;accès et l&apos;utilisation du service
-              Card Lens, une application web de reconnaissance de cartes à
-              collectionner en temps réel.
+              These Terms of Use govern access to and use of Card Lens, a
+              real-time trading card recognition web application.
             </p>
             <p className="mt-2">
-              En utilisant Card Lens, vous acceptez les présentes CGU dans leur
-              intégralité. Si vous n&apos;acceptez pas ces conditions, veuillez
-              ne pas utiliser le service.
+              By using Card Lens, you agree to these Terms in their entirety. If
+              you do not accept these terms, please do not use the service.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              2. Description du service
+              2. Service Description
             </h2>
-            <p>Card Lens propose les fonctionnalités suivantes :</p>
+            <p>Card Lens provides the following features:</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
               <li>
-                Reconnaissance de cartes à collectionner (Pokémon, Magic: The
-                Gathering, Yu-Gi-Oh!, Hololive OCG) via la caméra de votre
-                appareil
+                Trading card recognition (Pok&eacute;mon, Magic: The Gathering,
+                Yu-Gi-Oh!, Hololive OCG) via your device&apos;s camera
               </li>
               <li>
-                Affichage d&apos;informations (nom, set, rareté) et de prix
-                indicatifs
+                Display of card information (name, set, rarity) and indicative
+                pricing
+              </li>
+              <li>Personal card collection management (with an account)</li>
+              <li>Phone camera connection via WebRTC</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-200 mb-3">
+              3. Access
+            </h2>
+            <p>
+              Access to Card Lens is free. Some features (collection management)
+              require creating an account via Google or Discord.
+            </p>
+            <p className="mt-2">
+              The publisher reserves the right to modify, suspend, or
+              discontinue all or part of the service at any time, without notice
+              or compensation.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-200 mb-3">
+              4. User Account
+            </h2>
+            <p>
+              By creating an account, you agree to provide accurate information.
+              You are responsible for maintaining the confidentiality of your
+              login credentials and for all activity under your account.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-200 mb-3">
+              5. Acceptable Use
+            </h2>
+            <p>You agree not to:</p>
+            <ul className="list-disc list-inside space-y-1 mt-2">
+              <li>Use the service for illegal or unauthorized purposes</li>
+              <li>
+                Attempt to bypass or circumvent the service&apos;s security
+                measures
               </li>
               <li>
-                Gestion d&apos;une collection personnelle de cartes (avec
-                compte)
+                Deliberately overload the servers or third-party APIs
               </li>
               <li>
-                Connexion via caméra de téléphone par WebRTC
+                Reproduce, redistribute, or commercially exploit pricing data
+                obtained through the service without authorization from the
+                original providers
+              </li>
+              <li>
+                Use automated scripts to access the service at scale
               </li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              3. Accès au service
+              6. Intellectual Property
             </h2>
             <p>
-              L&apos;accès à Card Lens est gratuit. Certaines fonctionnalités
-              (gestion de collection) nécessitent la création d&apos;un compte
-              via Google ou Discord.
+              All content, code, design, and features of Card Lens are the
+              exclusive property of the publisher. All rights reserved. No part
+              of this application may be reproduced, distributed, or modified
+              without prior written consent.
             </p>
             <p className="mt-2">
-              L&apos;éditeur se réserve le droit de modifier, suspendre ou
-              interrompre tout ou partie du service à tout moment, sans préavis
-              ni indemnité.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              4. Compte utilisateur
-            </h2>
-            <p>
-              En créant un compte, vous vous engagez à fournir des informations
-              exactes. Vous êtes responsable de la confidentialité de vos
-              identifiants de connexion et de toute activité effectuée sous
-              votre compte.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              5. Utilisation acceptable
-            </h2>
-            <p>Vous vous engagez à ne pas :</p>
-            <ul className="list-disc list-inside space-y-1 mt-2">
-              <li>
-                Utiliser le service à des fins illégales ou non autorisées
-              </li>
-              <li>
-                Tenter de contourner les mesures de sécurité du service
-              </li>
-              <li>
-                Surcharger volontairement les serveurs ou les API tierces
-              </li>
-              <li>
-                Reproduire, redistribuer ou exploiter commercialement les
-                données de prix obtenues via le service sans autorisation des
-                fournisseurs d&apos;origine
-              </li>
-              <li>
-                Utiliser des scripts automatisés pour accéder massivement au
-                service
-              </li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              6. Propriété intellectuelle
-            </h2>
-            <p>
-              Le code source de Card Lens est distribué sous licence MIT. Vous
-              pouvez librement utiliser, copier, modifier et distribuer le code
-              conformément aux termes de cette licence.
-            </p>
-            <p className="mt-2">
-              Les images, noms et marques des jeux de cartes affichés via le
-              service appartiennent à leurs détenteurs respectifs (Nintendo /
+              The images, names, and trademarks of trading card games displayed
+              through the service belong to their respective owners (Nintendo /
               Creatures Inc. / GAME FREAK Inc., Wizards of the Coast, Konami,
-              Cover Corp.). Ces éléments sont affichés à des fins
-              d&apos;identification uniquement.
+              Cover Corp.). These elements are displayed for identification
+              purposes only.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              7. Informations de prix
+              7. Pricing Information
             </h2>
             <p>
-              Les prix affichés sont fournis à titre purement indicatif par des
-              API tierces (TCGdex, Scryfall, YGOProdeck). Card Lens ne garantit
-              pas l&apos;exactitude, la complétude ou l&apos;actualité de ces
-              données. Les prix peuvent varier en fonction du marché, de
-              l&apos;état des cartes et d&apos;autres facteurs.
+              Prices displayed are provided for informational purposes only by
+              third-party APIs (TCGdex, Scryfall, YGOProdeck). Card Lens does
+              not guarantee the accuracy, completeness, or timeliness of this
+              data. Prices may vary based on market conditions, card condition,
+              and other factors.
             </p>
             <p className="mt-2">
-              Card Lens ne saurait être tenu responsable de toute perte
-              financière résultant de décisions basées sur les prix affichés.
+              Card Lens shall not be held liable for any financial loss
+              resulting from decisions based on displayed prices.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              8. Limitation de responsabilité
+              8. Limitation of Liability
             </h2>
             <p>
-              Card Lens est fourni « tel quel » et « selon disponibilité », sans
-              aucune garantie, expresse ou implicite. L&apos;éditeur ne garantit
-              pas :
+              Card Lens is provided &ldquo;as is&rdquo; and &ldquo;as
+              available&rdquo; without any warranty, express or implied. The
+              publisher does not guarantee:
             </p>
             <ul className="list-disc list-inside space-y-1 mt-2">
               <li>
-                L&apos;exactitude de la reconnaissance des cartes par
-                l&apos;intelligence artificielle
+                The accuracy of card recognition by the artificial intelligence
               </li>
-              <li>La disponibilité continue et ininterrompue du service</li>
-              <li>L&apos;exactitude des informations de prix ou de rareté</li>
+              <li>Continuous and uninterrupted availability of the service</li>
+              <li>The accuracy of pricing or rarity information</li>
             </ul>
             <p className="mt-2">
-              En aucun cas l&apos;éditeur ne pourra être tenu responsable de
-              dommages directs, indirects, accessoires ou consécutifs résultant
-              de l&apos;utilisation du service.
+              In no event shall the publisher be liable for any direct,
+              indirect, incidental, or consequential damages resulting from the
+              use of the service.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              9. Protection des données
+              9. Data Protection
             </h2>
             <p>
-              L&apos;utilisation de vos données personnelles est régie par notre{" "}
+              The use of your personal data is governed by our{" "}
               <Link
                 href="/privacy"
                 className="underline hover:text-zinc-300 transition-colors"
               >
-                Politique de confidentialité
+                Privacy Policy
               </Link>
               .
             </p>
@@ -200,24 +185,23 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              10. Modifications des CGU
+              10. Changes to These Terms
             </h2>
             <p>
-              L&apos;éditeur se réserve le droit de modifier les présentes CGU à
-              tout moment. Les modifications prennent effet dès leur publication
-              sur cette page. Il est conseillé de consulter régulièrement cette
-              page.
+              The publisher reserves the right to modify these Terms at any
+              time. Changes take effect upon publication on this page. You are
+              advised to review this page regularly.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-zinc-200 mb-3">
-              11. Droit applicable
+              11. Governing Law
             </h2>
             <p>
-              Les présentes CGU sont régies par le droit français. En cas de
-              litige, les parties s&apos;engagent à rechercher une solution
-              amiable avant toute action judiciaire.
+              These Terms are governed by French law. In the event of a dispute,
+              the parties agree to seek an amicable resolution before taking
+              legal action.
             </p>
           </section>
 
@@ -226,15 +210,15 @@ export default function TermsPage() {
               12. Contact
             </h2>
             <p>
-              Pour toute question relative aux présentes CGU, veuillez ouvrir
-              une issue sur le{" "}
+              For any questions regarding these Terms, please open an issue on
+              the{" "}
               <a
                 href="https://github.com/Funsaiki/card-lens/issues"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-zinc-300 transition-colors"
               >
-                dépôt GitHub
+                GitHub repository
               </a>
               .
             </p>
