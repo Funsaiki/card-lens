@@ -1,5 +1,7 @@
 import { CardData } from "@/types";
 
+// ---------- Types (local JSON from apitcg) ----------
+
 export interface RiftboundRawCard {
   id: string;
   number: string;
@@ -26,9 +28,153 @@ export interface RiftboundSet {
   releaseDate: string;
 }
 
-// Lazy-loaded data cache
-let setsCache: RiftboundSet[] | null = null;
-let cardsCache: Map<string, RiftboundRawCard[]> | null = null;
+// ---------- Types (Riot API) ----------
+
+interface RiotCardMedia {
+  type: string;
+  url: string;
+  name: string;
+}
+
+interface RiotCardArt {
+  thumbnailURL?: string;
+  fullURL?: string;
+  artist?: string;
+}
+
+interface RiotCardStats {
+  cost?: number;
+  energy?: number;
+  might?: number;
+  power?: number;
+}
+
+interface RiotCard {
+  id: string;
+  name: string;
+  set: string;
+  type: string;
+  rarity: string;
+  faction?: string;
+  description?: string;
+  flavorText?: string;
+  collectorNumber?: number;
+  keywords?: string[];
+  tags?: string[];
+  stats?: RiotCardStats;
+  // Documented format
+  art?: RiotCardArt;
+  // Actual format (per GitHub issue #1093)
+  media?: RiotCardMedia[];
+}
+
+interface RiotSet {
+  id: string;
+  name: string;
+  cards: RiotCard[];
+}
+
+interface RiotContentResponse {
+  game: string;
+  lastUpdated: string;
+  version: string;
+  sets: RiotSet[];
+}
+
+// ---------- Riot API fetcher ----------
+
+const RIOT_API_BASE = "https://americas.api.riotgames.com";
+const RIOT_CARD_IMAGE_BASE = "https://riftbound.leagueoflegends.com";
+
+let riotCache: { data: RiotContentResponse; fetchedAt: number } | null = null;
+const RIOT_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+async function fetchRiotContent(): Promise<RiotContentResponse | null> {
+  const apiKey = process.env.RIOT_API_KEY;
+  if (!apiKey) return null;
+
+  if (riotCache && Date.now() - riotCache.fetchedAt < RIOT_CACHE_TTL) {
+    return riotCache.data;
+  }
+
+  try {
+    const res = await fetch(
+      `${RIOT_API_BASE}/riftbound/content/v1/contents?locale=en`,
+      { headers: { "X-Riot-Token": apiKey }, next: { revalidate: 3600 } }
+    );
+    if (!res.ok) {
+      console.warn(`[Riftbound] Riot API returned ${res.status}`);
+      return null;
+    }
+    const data: RiotContentResponse = await res.json();
+    riotCache = { data, fetchedAt: Date.now() };
+    return data;
+  } catch (err) {
+    console.warn("[Riftbound] Riot API fetch failed:", err);
+    return null;
+  }
+}
+
+function getRiotCardImage(card: RiotCard): string {
+  // Try documented format first
+  if (card.art?.fullURL) return card.art.fullURL;
+  if (card.art?.thumbnailURL) return card.art.thumbnailURL;
+
+  // Try actual format (media array)
+  if (card.media?.length) {
+    const full = card.media.find((m) => m.type === "full" || m.type === "card_art");
+    const any = full ?? card.media[0];
+    if (any?.url) {
+      // URL might be relative or absolute
+      if (any.url.startsWith("http")) return any.url;
+      return `${RIOT_CARD_IMAGE_BASE}${any.url}`;
+    }
+  }
+
+  return "";
+}
+
+function parseRiotCard(card: RiotCard, setName: string): CardData {
+  return {
+    id: card.id,
+    name: card.name,
+    game: "riftbound",
+    set: setName,
+    rarity: card.rarity ?? "Unknown",
+    imageUrl: getRiotCardImage(card),
+    details: {
+      ...(card.type ? { type: card.type } : {}),
+      ...(card.faction ? { domain: card.faction } : {}),
+      ...(card.stats?.energy ? { energy: String(card.stats.energy) } : {}),
+      ...(card.stats?.might ? { might: String(card.stats.might) } : {}),
+      ...(card.stats?.power ? { power: String(card.stats.power) } : {}),
+      ...(card.description ? { text: stripHtml(card.description) } : {}),
+    },
+  };
+}
+
+// ---------- Public API (Riot-first, local fallback) ----------
+
+export async function loadAllRiftboundCardsWithRiot(): Promise<{ cards: CardData[]; source: "riot" | "local" }> {
+  const riot = await fetchRiotContent();
+  if (riot?.sets?.length) {
+    const cards: CardData[] = [];
+    for (const set of riot.sets) {
+      for (const card of set.cards) {
+        cards.push(parseRiotCard(card, set.name));
+      }
+    }
+    if (cards.length > 0) return { cards, source: "riot" };
+  }
+
+  // Fallback to local data
+  const local = await loadAllRiftboundCards();
+  return { cards: local.map(parseRiftboundCard), source: "local" };
+}
+
+// ---------- Local JSON fallback ----------
+
+let localCardsCache: Map<string, RiftboundRawCard[]> | null = null;
 
 const SET_FILES: Record<string, string> = {
   origins: "origins",
@@ -37,15 +183,13 @@ const SET_FILES: Record<string, string> = {
 };
 
 export async function loadRiftboundSets(): Promise<RiftboundSet[]> {
-  if (setsCache) return setsCache;
   const data = (await import("@/data/riftbound/sets.json")).default;
-  setsCache = data as RiftboundSet[];
-  return setsCache;
+  return data as RiftboundSet[];
 }
 
 export async function loadRiftboundCards(setId: string): Promise<RiftboundRawCard[]> {
-  if (!cardsCache) cardsCache = new Map();
-  if (cardsCache.has(setId)) return cardsCache.get(setId)!;
+  if (!localCardsCache) localCardsCache = new Map();
+  if (localCardsCache.has(setId)) return localCardsCache.get(setId)!;
 
   const file = SET_FILES[setId];
   if (!file) return [];
@@ -65,9 +209,8 @@ export async function loadRiftboundCards(setId: string): Promise<RiftboundRawCar
       return [];
   }
 
-  // Filter out non-card products (boosters, displays, etc.)
   const cards = data.filter((c) => c.rarity !== null && c.cardType !== null);
-  cardsCache.set(setId, cards);
+  localCardsCache.set(setId, cards);
   return cards;
 }
 

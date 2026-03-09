@@ -6,7 +6,7 @@ import {
 } from "@/lib/cards-api";
 import { CardGame } from "@/types";
 import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
-import { loadAllRiftboundCards, parseRiftboundCard } from "@/lib/riftbound";
+import { loadAllRiftboundCardsWithRiot } from "@/lib/riftbound";
 import hololiveCardsData from "@/data/hololive-cards.json";
 
 export const dynamic = "force-dynamic";
@@ -75,9 +75,8 @@ export async function GET(request: NextRequest) {
           break;
         }
         case "riftbound": {
-          const allCards = await loadAllRiftboundCards();
-          const raw = allCards.find((c) => c.id === cardId);
-          if (raw) card = parseRiftboundCard(raw);
+          const { cards: rbAll } = await loadAllRiftboundCardsWithRiot();
+          card = rbAll.find((c) => c.id === cardId) ?? null;
           break;
         }
         case "hololive": {
@@ -145,12 +144,11 @@ export async function GET(request: NextRequest) {
         break;
       }
       case "riftbound": {
-        const allCards = await loadAllRiftboundCards();
+        const { cards: rbAll } = await loadAllRiftboundCardsWithRiot();
         const q = query.toLowerCase();
-        const matches = allCards
+        cards = rbAll
           .filter((c) => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
           .slice(0, 10);
-        cards = matches.map(parseRiftboundCard);
         break;
       }
       case "hololive": {
