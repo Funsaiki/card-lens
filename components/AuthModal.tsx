@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 type AuthTab = "signin" | "signup";
 
@@ -14,9 +15,12 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   const [tab, setTab] = useState<AuthTab>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const supabase = createClient();
 
@@ -52,11 +56,24 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           window.location.reload();
         }
       } else {
+        if (!username.trim()) {
+          setError("Please choose a username");
+          setLoading(false);
+          return;
+        }
+        if (!acceptedTerms) {
+          setError("You must accept the Terms of Use and Privacy Policy");
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
+            data: {
+              display_name: username.trim(),
+            },
           },
         });
         if (error) {
@@ -68,7 +85,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
 
       setLoading(false);
     },
-    [tab, email, password, supabase, onClose]
+    [tab, email, password, username, acceptedTerms, supabase, onClose]
   );
 
   if (!open) return null;
@@ -99,12 +116,26 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           </p>
 
           {confirmSent ? (
-            <div className="text-center py-4">
-              <svg className="w-12 h-12 text-green-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-              </svg>
-              <p className="text-sm text-zinc-300">Check your email</p>
-              <p className="text-xs text-zinc-500 mt-1">Click the link to confirm your account</p>
+            <div className="text-center py-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+              </div>
+              <p className="text-base font-medium text-white">Check your email</p>
+              <p className="text-sm text-zinc-400 mt-2">
+                We sent a confirmation link to
+              </p>
+              <p className="text-sm text-blue-400 font-medium mt-1">{email}</p>
+              <p className="text-xs text-zinc-500 mt-4">
+                Click the link to activate your account. Check your spam folder if you don&apos;t see it.
+              </p>
+              <button
+                onClick={() => { setConfirmSent(false); setTab("signin"); setError(null); }}
+                className="mt-5 px-4 py-2 text-xs text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg transition-colors"
+              >
+                Back to sign in
+              </button>
             </div>
           ) : (
             <>
@@ -142,6 +173,18 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
 
               {/* Email form */}
               <form onSubmit={handleEmailSubmit} className="space-y-3">
+                {tab === "signup" && (
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Username"
+                    required
+                    minLength={3}
+                    maxLength={30}
+                    className="w-full px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                  />
+                )}
                 <input
                   type="email"
                   value={email}
@@ -150,15 +193,77 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
                   required
                   className="w-full px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
                 />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    required
+                    minLength={6}
+                    className="w-full px-3 py-2 pr-9 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+
+                {tab === "signup" && (
+                  <>
+                    {password.length > 0 && (
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4].map((level) => (
+                          <div
+                            key={level}
+                            className={`h-1 flex-1 rounded-full transition-colors ${
+                              password.length >= level * 3
+                                ? password.length >= 12
+                                  ? "bg-green-500"
+                                  : password.length >= 9
+                                  ? "bg-yellow-500"
+                                  : "bg-red-500"
+                                : "bg-zinc-700"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    <label className="flex items-start gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                      />
+                      <span className="text-xs text-zinc-400 leading-relaxed group-hover:text-zinc-300 transition-colors">
+                        I agree to the{" "}
+                        <Link href="/terms" target="_blank" className="text-blue-400 hover:text-blue-300 underline" onClick={(e) => e.stopPropagation()}>
+                          Terms of Use
+                        </Link>{" "}
+                        and{" "}
+                        <Link href="/privacy" target="_blank" className="text-blue-400 hover:text-blue-300 underline" onClick={(e) => e.stopPropagation()}>
+                          Privacy Policy
+                        </Link>
+                      </span>
+                    </label>
+                  </>
+                )}
+
                 <button
                   type="submit"
                   disabled={loading}

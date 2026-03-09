@@ -3,11 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { useTermsAcceptance } from "@/hooks/useTermsAcceptance";
 import UserMenu from "./UserMenu";
 import AuthModal from "./AuthModal";
+import TermsAcceptanceModal from "./TermsAcceptanceModal";
 
 export default function NavBar() {
   const { user, loading } = useUser();
+  const { needsAcceptance, markAccepted } = useTermsAcceptance(user);
   const [showAuth, setShowAuth] = useState(false);
 
   return (
@@ -43,6 +46,7 @@ export default function NavBar() {
       </nav>
 
       <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
+      {needsAcceptance && <TermsAcceptanceModal onAccepted={markAccepted} />}
     </>
   );
 }
