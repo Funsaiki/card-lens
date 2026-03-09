@@ -12,8 +12,12 @@ import SearchResults from "@/components/SearchResults";
 import SetIndexer from "@/components/SetIndexer";
 import Onboarding, { useOnboarding } from "@/components/Onboarding";
 
+import UserMenu from "@/components/UserMenu";
+import AuthModal from "@/components/AuthModal";
+
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useCardRecognition } from "@/hooks/useCardRecognition";
+import { useUser } from "@/hooks/useUser";
 import { CardData, CardGame, SessionCard } from "@/types";
 import { CardEmbeddingEntry } from "@/lib/embeddings";
 
@@ -33,6 +37,8 @@ function ScanContent() {
   const [isSearching, setIsSearching] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { show: showOnboarding, dismiss: dismissOnboarding, reopen: reopenOnboarding } = useOnboarding();
+  const { user } = useUser();
+  const [showAuth, setShowAuth] = useState(false);
   const [frameHeightPercent, setFrameHeightPercent] = useState(0.75);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -238,8 +244,18 @@ function ScanContent() {
           </button>
         </form>
 
-        {/* Help + Sidebar toggle */}
+        {/* Help + User + Sidebar toggle */}
         <div className="flex items-center gap-1 flex-shrink-0">
+          {user ? (
+            <UserMenu user={user} />
+          ) : (
+            <button
+              onClick={() => setShowAuth(true)}
+              className="px-2 py-1 text-[11px] text-zinc-400 hover:text-white transition-colors"
+            >
+              Sign in
+            </button>
+          )}
           <button
             onClick={reopenOnboarding}
             className="p-1.5 text-zinc-500 hover:text-white transition-colors"
@@ -397,6 +413,7 @@ function ScanContent() {
       </div>
 
       <Onboarding show={showOnboarding} onDone={dismissOnboarding} />
+      <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
     </div>
   );
 }

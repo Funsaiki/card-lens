@@ -43,3 +43,37 @@ export interface SessionCard {
   timestamp: number;
   confidence: number;
 }
+
+// ---------- Collection ----------
+
+export type CardCondition =
+  | "mint"
+  | "near_mint"
+  | "lightly_played"
+  | "moderately_played"
+  | "heavily_played"
+  | "damaged";
+
+export const CONDITION_LABELS: Record<CardCondition, string> = {
+  mint: "Mint",
+  near_mint: "Near Mint",
+  lightly_played: "Lightly Played",
+  moderately_played: "Moderately Played",
+  heavily_played: "Heavily Played",
+  damaged: "Damaged",
+};
+
+export interface CollectionItem {
+  id: string;
+  cardId: string;
+  game: CardGame;
+  cardName: string;
+  cardSet: string | null;
+  cardRarity: string | null;
+  cardImageUrl: string | null;
+  cardData: CardData;
+  quantity: number;
+  condition: CardCondition;
+  notes: string | null;
+  addedAt: string;
+}
