@@ -5,7 +5,7 @@
  * then compares them using cosine similarity for robust matching.
  */
 
-import * as tf from "@tensorflow/tfjs";
+import "@tensorflow/tfjs";
 import * as mobilenet from "@tensorflow-models/mobilenet";
 
 // ---------- Model management ----------
@@ -24,7 +24,6 @@ function notifyListeners(loaded: boolean) {
  */
 export function onModelStateChange(listener: (loaded: boolean) => void): () => void {
   modelListeners.add(listener);
-  // Immediately notify with current state
   listener(model !== null);
   return () => modelListeners.delete(listener);
 }
@@ -46,11 +45,15 @@ export async function loadModel(): Promise<mobilenet.MobileNet> {
   return modelLoading;
 }
 
-export function isModelLoaded(): boolean {
-  return model !== null;
-}
-
 // ---------- Embedding computation ----------
+
+// Reusable canvas to avoid GC pressure
+let _embedCanvas: HTMLCanvasElement | null = null;
+
+function getEmbedCanvas(): HTMLCanvasElement {
+  if (!_embedCanvas) _embedCanvas = document.createElement("canvas");
+  return _embedCanvas;
+}
 
 /**
  * Compute embedding from ImageData.
@@ -59,29 +62,10 @@ export function isModelLoaded(): boolean {
 export async function computeEmbedding(imageData: ImageData): Promise<Float32Array> {
   const m = await loadModel();
 
-  // Convert ImageData to a canvas so MobileNet can process it
-  const canvas = document.createElement("canvas");
+  const canvas = getEmbedCanvas();
   canvas.width = imageData.width;
   canvas.height = imageData.height;
   canvas.getContext("2d")!.putImageData(imageData, 0, 0);
-
-  // infer(canvas, true) returns the embedding (before classification layer)
-  const embeddingTensor = m.infer(canvas, true);
-  const data = await embeddingTensor.data();
-  embeddingTensor.dispose();
-
-  // Normalize the embedding vector (unit length for cosine similarity)
-  const embedding = new Float32Array(data);
-  normalize(embedding);
-
-  return embedding;
-}
-
-/**
- * Compute embedding directly from an HTMLCanvasElement.
- */
-export async function computeEmbeddingFromCanvas(canvas: HTMLCanvasElement): Promise<Float32Array> {
-  const m = await loadModel();
 
   const embeddingTensor = m.infer(canvas, true);
   const data = await embeddingTensor.data();
@@ -195,11 +179,4 @@ export function deserializeEmbedding(data: number[]): Float32Array {
   const vec = new Float32Array(data);
   normalize(vec);
   return vec;
-}
-
-/**
- * Clean up TensorFlow memory.
- */
-export function cleanup(): void {
-  tf.disposeVariables();
 }

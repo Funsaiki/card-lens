@@ -110,18 +110,6 @@ export async function loadAllEmbeddings(): Promise<CardEmbeddingEntry[]> {
 }
 
 /**
- * Get the list of indexed sets with card counts.
- */
-export async function getIndexedSets(): Promise<{ setId: string; count: number }[]> {
-  const entries = await loadAllEmbeddings();
-  const counts = new Map<string, number>();
-  for (const entry of entries) {
-    counts.set(entry.set, (counts.get(entry.set) ?? 0) + 1);
-  }
-  return Array.from(counts.entries()).map(([setId, count]) => ({ setId, count }));
-}
-
-/**
  * Delete all embeddings for a given set.
  */
 export async function deleteSetEmbeddings(setId: string): Promise<void> {
