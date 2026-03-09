@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@14:*)",
+      "Bash(mv .claude:*)",
+      "Bash(npm install:*)",
+      "Bash(npx next:*)",
+      "Bash(ipconfig:*)",
+      "Bash(rm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:docs.pokemontcg.io)",
+      "WebFetch(domain:pokemontcg.io)",
+      "WebFetch(domain:scrydex.com)",
+      "WebSearch",
+      "WebFetch(domain:api.tcgdex.net)",
+      "WebFetch(domain:tcgdex.dev)",
+      "WebFetch(domain:justtcg.com)",
+      "WebFetch(domain:en.hololive-official-cardgame.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(node:*)",
+      "Bash(sort -k2)",
+      "Bash(npm info:*)",
+      "Bash(npm audit:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:optcgapi.com)",
+      "WebFetch(domain:developer.riotgames.com)",
+      "WebFetch(domain:www.optcgapi.com)"
+    ]
+  }
+}

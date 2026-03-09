@@ -16,7 +16,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Card Lens - Real-time Trading Card Recognition",
   description:
-    "Identify Pokemon, Magic: The Gathering, and Yu-Gi-Oh cards in real-time using your camera. Get instant prices, rarity, and card details.",
+    "Identify Pokemon, One Piece, Riftbound, and Hololive cards in real-time using your camera. Get instant prices, rarity, and card details.",
 };
 
 export default function RootLayout({

@@ -14,8 +14,8 @@ const GAMES_WITH_SETS: CardGame[] = ["pokemon", "hololive"];
 const GAMES: { id: CardGame | "all"; label: string; color: string }[] = [
   { id: "all", label: "All", color: "from-zinc-400 to-zinc-500" },
   { id: "pokemon", label: "Pokemon", color: "from-amber-400 to-red-500" },
-  { id: "magic", label: "MTG", color: "from-violet-400 to-indigo-500" },
-  { id: "yugioh", label: "Yu-Gi-Oh!", color: "from-yellow-400 to-orange-500" },
+  { id: "onepiece", label: "One Piece", color: "from-red-400 to-pink-500" },
+  { id: "riftbound", label: "Riftbound", color: "from-emerald-400 to-cyan-500" },
   { id: "hololive", label: "Hololive", color: "from-cyan-400 to-blue-500" },
 ];
 

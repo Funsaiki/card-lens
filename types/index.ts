@@ -1,4 +1,4 @@
-export type CardGame = "pokemon" | "magic" | "yugioh" | "hololive";
+export type CardGame = "pokemon" | "onepiece" | "riftbound" | "hololive";
 
 export interface CardPrice {
   low?: number;
@@ -33,7 +33,7 @@ export interface CardData {
   set: string;
   rarity: string;
   imageUrl: string;
-  prices?: CardPrice;       // legacy / simple (Magic, Yu-Gi-Oh)
+  prices?: CardPrice;       // legacy / simple (One Piece, Riftbound)
   pricing?: CardPricing;    // multi-marketplace (Pokemon)
   details: Record<string, string>;
 }

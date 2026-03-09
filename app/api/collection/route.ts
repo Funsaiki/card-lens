@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing card data" }, { status: 400 });
   }
 
-  const VALID_GAMES = ["pokemon", "magic", "yugioh", "hololive"];
+  const VALID_GAMES = ["pokemon", "onepiece", "riftbound", "hololive"];
   const VALID_CONDITIONS = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
 
   if (!VALID_GAMES.includes(card.game)) {

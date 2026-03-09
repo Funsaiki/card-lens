@@ -36,8 +36,8 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
 
   const gameLabel = {
     pokemon: "Pokemon TCG",
-    magic: "Magic: The Gathering",
-    yugioh: "Yu-Gi-Oh!",
+    onepiece: "One Piece TCG",
+    riftbound: "Riftbound",
     hololive: "Hololive OCG",
   }[card.game];
 
@@ -96,7 +96,7 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
       {/* Prices — interactive charts */}
       {card.pricing && <PriceChart pricing={card.pricing} />}
 
-      {/* Prices — legacy single marketplace (Magic, Yu-Gi-Oh) */}
+      {/* Prices — legacy single marketplace (One Piece, Riftbound) */}
       {!card.pricing && card.prices && (
         <div className="bg-white/[0.04] border border-white/[0.06] rounded-lg p-3">
           <p className="text-[var(--muted)] text-xs mb-2">Market Price</p>

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   parsePokemonCard,
   parsePokemonSummary,
-  parseMagicCard,
-  parseYugiohCard,
+  parseOnePieceCard,
+  parseRiftboundCard,
 } from "@/lib/cards-api";
 import { CardGame } from "@/types";
 import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
@@ -12,6 +12,16 @@ import hololiveCardsData from "@/data/hololive-cards.json";
 export const dynamic = "force-dynamic";
 
 const hololiveCards = hololiveCardsData as HololiveRawCard[];
+
+const SCRYDEX_API_KEY = process.env.SCRYDEX_API_KEY ?? "";
+const SCRYDEX_TEAM_ID = process.env.SCRYDEX_TEAM_ID ?? "";
+
+function scrydexHeaders(): HeadersInit {
+  const h: HeadersInit = {};
+  if (SCRYDEX_API_KEY) h["X-Api-Key"] = SCRYDEX_API_KEY;
+  if (SCRYDEX_TEAM_ID) h["X-Team-ID"] = SCRYDEX_TEAM_ID;
+  return h;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,9 +37,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!["pokemon", "magic", "yugioh", "hololive"].includes(game)) {
+    if (!["pokemon", "onepiece", "riftbound", "hololive"].includes(game)) {
       return NextResponse.json(
-        { error: "Invalid game. Use: pokemon, magic, yugioh, hololive" },
+        { error: "Invalid game. Use: pokemon, onepiece, riftbound, hololive" },
         { status: 400 }
       );
     }
@@ -63,25 +73,25 @@ export async function GET(request: NextRequest) {
           }
           break;
         }
-        case "magic": {
+        case "onepiece": {
           const res = await fetch(
-            `https://api.scryfall.com/cards/${encodeURIComponent(cardId)}`,
-            { next: { revalidate: 3600 } }
-          );
-          if (res.ok) {
-            const full = await res.json();
-            card = parseMagicCard(full);
-          }
-          break;
-        }
-        case "yugioh": {
-          const res = await fetch(
-            `https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${encodeURIComponent(cardId)}`,
+            `https://www.optcgapi.com/api/sets/card/${encodeURIComponent(cardId)}/`,
             { next: { revalidate: 3600 } }
           );
           if (res.ok) {
             const data = await res.json();
-            if (data.data?.[0]) card = parseYugiohCard(data.data[0]);
+            if (Array.isArray(data) && data[0]) card = parseOnePieceCard(data[0]);
+          }
+          break;
+        }
+        case "riftbound": {
+          const res = await fetch(
+            `https://api.scrydex.com/riftbound/v1/cards/${encodeURIComponent(cardId)}?include=prices`,
+            { headers: scrydexHeaders(), next: { revalidate: 3600 } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.data) card = parseRiftboundCard(data.data);
           }
           break;
         }
@@ -136,9 +146,9 @@ export async function GET(request: NextRequest) {
         cards = fullCards;
         break;
       }
-      case "magic": {
+      case "onepiece": {
         const res = await fetch(
-          `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints`,
+          `https://www.optcgapi.com/api/sets/filtered/?card_name=${encodeURIComponent(query)}`,
           { next: { revalidate: 3600 } }
         );
         if (!res.ok) {
@@ -146,20 +156,20 @@ export async function GET(request: NextRequest) {
           break;
         }
         const data = await res.json();
-        cards = (data.data ?? []).slice(0, 10).map(parseMagicCard);
+        cards = (Array.isArray(data) ? data : []).slice(0, 10).map(parseOnePieceCard);
         break;
       }
-      case "yugioh": {
+      case "riftbound": {
         const res = await fetch(
-          `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(query)}`,
-          { next: { revalidate: 3600 } }
+          `https://api.scrydex.com/riftbound/v1/cards?q=name:${encodeURIComponent(query)}&page_size=10&include=prices`,
+          { headers: scrydexHeaders(), next: { revalidate: 3600 } }
         );
         if (!res.ok) {
           cards = [];
           break;
         }
         const data = await res.json();
-        cards = (data.data ?? []).slice(0, 10).map(parseYugiohCard);
+        cards = (data.data ?? []).map(parseRiftboundCard);
         break;
       }
       case "hololive": {

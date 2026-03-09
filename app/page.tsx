@@ -20,39 +20,40 @@ const GAMES = [
     ),
   },
   {
-    id: "magic",
-    name: "Magic: The Gathering",
-    description: "Instantly recognize your Magic cards",
-    gradient: "from-violet-500 via-purple-500 to-indigo-500",
-    glow: "group-hover:shadow-violet-500/20",
+    id: "onepiece",
+    name: "One Piece TCG",
+    description: "Identify and price your One Piece cards",
+    gradient: "from-red-500 via-rose-500 to-pink-500",
+    glow: "group-hover:shadow-red-500/20",
     icon: (
-      /* MTG — five-color mana pentagon */
-      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.2">
-        <polygon points="12,3 20,9.5 17,18.5 7,18.5 4,9.5" />
-        <polygon points="12,3 17,18.5 4,9.5 20,9.5 7,18.5" strokeWidth="0.8" />
-        <circle cx="12" cy="3" r="1.3" fill="currentColor" stroke="none" />
-        <circle cx="20" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
-        <circle cx="17" cy="18.5" r="1.3" fill="currentColor" stroke="none" />
-        <circle cx="7" cy="18.5" r="1.3" fill="currentColor" stroke="none" />
-        <circle cx="4" cy="9.5" r="1.3" fill="currentColor" stroke="none" />
+      /* One Piece — Straw Hat */
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <ellipse cx="12" cy="14" rx="7" ry="3.5" />
+        <path d="M5 14c0-3 3.1-7 7-7s7 4 7 7" />
+        <path d="M3 14.5c0 0 1.5 1 9 1s9-1 9-1" strokeWidth="1.2" />
+        <line x1="12" y1="7" x2="12" y2="10.5" strokeWidth="1" />
+        <ellipse cx="12" cy="14" rx="9.5" ry="1.2" strokeWidth="2" />
       </svg>
     ),
   },
   {
-    id: "yugioh",
-    name: "Yu-Gi-Oh!",
-    description: "Scan and look up your Yu-Gi-Oh cards",
-    gradient: "from-yellow-400 via-amber-500 to-orange-500",
-    glow: "group-hover:shadow-amber-500/20",
+    id: "riftbound",
+    name: "Riftbound",
+    description: "Browse your League of Legends cards",
+    gradient: "from-emerald-400 via-teal-500 to-cyan-500",
+    glow: "group-hover:shadow-emerald-500/20",
     icon: (
-      /* Yu-Gi-Oh — Millennium Eye (Eye of Wdjat) */
+      /* Riftbound — Hextech crystal */
       <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M2 12c2.5-4 6-6 10-6s7.5 2 10 6c-2.5 4-6 6-10 6s-7.5-2-10-6z" />
-        <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
-        <circle cx="12" cy="12" r="1.2" fill="none" stroke="currentColor" strokeWidth="1" className="text-black" />
-        <path d="M3.5 7.5c2-2.5 5.5-4 8.5-4s6.5 1.5 8.5 4" strokeWidth="2" strokeLinecap="round" />
-        <path d="M11 18l-1.5 4" strokeLinecap="round" />
-        <path d="M11 21.5c0 .8 1.5 1.2 2 0" strokeLinecap="round" />
+        <path d="M12 2L20 8v8l-8 6-8-6V8z" />
+        <path d="M12 6l4.5 3v6L12 18l-4.5-3V9z" strokeWidth="1" />
+        <line x1="12" y1="2" x2="12" y2="6" strokeWidth="0.8" />
+        <line x1="20" y1="8" x2="16.5" y2="9" strokeWidth="0.8" />
+        <line x1="20" y1="16" x2="16.5" y2="15" strokeWidth="0.8" />
+        <line x1="12" y1="22" x2="12" y2="18" strokeWidth="0.8" />
+        <line x1="4" y1="16" x2="7.5" y2="15" strokeWidth="0.8" />
+        <line x1="4" y1="8" x2="7.5" y2="9" strokeWidth="0.8" />
+        <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
       </svg>
     ),
   },

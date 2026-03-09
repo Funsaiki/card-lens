@@ -25,10 +25,10 @@ export default function Footer() {
         <p className="text-[10px] text-zinc-600 mt-4 text-center sm:text-left">
           Card Lens is not affiliated with any trading card game publisher.
           Pok&eacute;mon is a trademark of Nintendo / Creatures Inc. / GAME
-          FREAK Inc. Magic: The Gathering is a trademark of Wizards of the
-          Coast. Yu-Gi-Oh! is a trademark of Konami. Hololive is a trademark of
-          Cover Corp. All names, logos, and card images are property of their
-          respective owners.
+          FREAK Inc. One Piece is a trademark of Shueisha / Toei Animation /
+          Bandai. Riftbound and League of Legends are trademarks of Riot Games.
+          Hololive is a trademark of Cover Corp. All names, logos, and card
+          images are property of their respective owners.
         </p>
       </div>
     </footer>
