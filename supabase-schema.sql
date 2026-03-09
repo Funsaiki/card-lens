@@ -49,7 +49,7 @@ create table public.collection_items (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id) on delete cascade not null,
   card_id text not null,
-  game text not null check (game in ('pokemon', 'magic', 'yugioh', 'hololive')),
+  game text not null check (game in ('pokemon', 'onepiece', 'riftbound', 'hololive')),
   card_name text not null,
   card_set text,
   card_rarity text,
