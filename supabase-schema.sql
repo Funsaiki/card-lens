@@ -1,0 +1,80 @@
+-- Card Lens: Supabase schema
+-- Run this in the Supabase SQL Editor (https://supabase.com/dashboard)
+
+-- 1. Profiles table (extends auth.users)
+create table public.profiles (
+  id uuid references auth.users(id) on delete cascade primary key,
+  display_name text,
+  avatar_url text,
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null
+);
+
+alter table public.profiles enable row level security;
+
+create policy "Users can view own profile"
+  on public.profiles for select using (auth.uid() = id);
+create policy "Users can update own profile"
+  on public.profiles for update using (auth.uid() = id);
+create policy "Users can insert own profile"
+  on public.profiles for insert with check (auth.uid() = id);
+
+-- Auto-create profile on signup
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, display_name, avatar_url)
+  values (
+    new.id,
+    coalesce(
+      new.raw_user_meta_data->>'full_name',
+      new.raw_user_meta_data->>'name',
+      split_part(new.email, '@', 1)
+    ),
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- 2. Collection items table
+create table public.collection_items (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  card_id text not null,
+  game text not null check (game in ('pokemon', 'magic', 'yugioh', 'hololive')),
+  card_name text not null,
+  card_set text,
+  card_rarity text,
+  card_image_url text,
+  card_data jsonb,
+  quantity integer default 1 not null check (quantity > 0),
+  condition text default 'near_mint',
+  notes text,
+  added_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null,
+
+  unique(user_id, card_id, game)
+);
+
+alter table public.collection_items enable row level security;
+
+create policy "Users can manage own collection"
+  on public.collection_items for all using (auth.uid() = user_id);
+
+create index idx_collection_user_game on public.collection_items(user_id, game);
+create index idx_collection_card_id on public.collection_items(card_id);
+
+-- 3. Stats view
+create view public.collection_stats as
+select
+  user_id,
+  game,
+  count(*) as unique_cards,
+  sum(quantity) as total_cards
+from public.collection_items
+group by user_id, game;

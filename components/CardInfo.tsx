@@ -3,6 +3,7 @@
 import { CardData } from "@/types";
 import Image from "next/image";
 import PriceChart from "./PriceChart";
+import AddToCollectionButton from "./AddToCollectionButton";
 
 interface CardInfoProps {
   card: CardData | null;
@@ -76,6 +77,9 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
           </div>
         </div>
       )}
+
+      {/* Add to collection */}
+      <AddToCollectionButton card={card} />
 
       {/* Set and rarity */}
       <div className="grid grid-cols-2 gap-2 text-sm">

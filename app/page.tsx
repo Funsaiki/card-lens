@@ -1,4 +1,5 @@
 import Link from "next/link";
+import NavBar from "@/components/NavBar";
 
 const GAMES = [
   {
@@ -58,6 +59,7 @@ const GAMES = [
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
+      <NavBar />
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-20">
         <div className="text-center max-w-2xl mx-auto mb-12 animate-fade-in-up">
