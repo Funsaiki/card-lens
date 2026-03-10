@@ -15,12 +15,15 @@ export default function NavBar() {
 
   return (
     <>
-      <nav className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md">
+      <nav className="sticky top-0 z-40 flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md">
         <Link href="/" className="flex items-center gap-2 group">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-shadow">
-            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeLinecap="round">
+              <path d="M3 8V5a2 2 0 0 1 2-2h3" strokeWidth="2.5" />
+              <path d="M16 3h3a2 2 0 0 1 2 2v3" strokeWidth="2.5" />
+              <path d="M21 16v3a2 2 0 0 1-2 2h-3" strokeWidth="2.5" />
+              <path d="M8 21H5a2 2 0 0 1-2-2v-3" strokeWidth="2.5" />
+              <rect x="8" y="6" width="8" height="12" rx="1" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15" />
             </svg>
           </div>
           <span className="text-sm font-semibold text-zinc-200 group-hover:text-white transition-colors">
@@ -40,6 +43,19 @@ export default function NavBar() {
               Collection
             </Link>
           )}
+
+          <a
+            href="https://ko-fi.com/funsaiki"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-medium text-pink-300 hover:text-pink-200 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 rounded-lg transition-colors"
+            title="Support Card Lens"
+          >
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+            <span className="hidden sm:inline">Donate</span>
+          </a>
 
           {loading ? (
             <div className="w-6 h-6" />

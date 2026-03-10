@@ -70,11 +70,16 @@ export default function SearchResults({
                 {card.rarity && (
                   <span className="text-xs text-zinc-400">{card.rarity}</span>
                 )}
-                {card.prices?.market && (
-                  <span className="text-xs text-green-400">
-                    ${card.prices.market.toFixed(2)}
-                  </span>
-                )}
+                {(() => {
+                  const p = card.pricing?.tcgplayer?.market ?? card.pricing?.cardmarket?.market ?? card.prices?.market;
+                  if (p == null) return null;
+                  const isEur = card.pricing?.cardmarket?.market != null && card.pricing?.tcgplayer?.market == null;
+                  return (
+                    <span className="text-xs text-green-400">
+                      {isEur ? `${p.toFixed(2)}€` : `$${p.toFixed(2)}`}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
 

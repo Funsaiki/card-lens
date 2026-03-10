@@ -94,7 +94,7 @@ export default function Onboarding({ show, onDone }: OnboardingProps) {
   const isFirst = step === 0;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-5 py-6">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in"
@@ -102,7 +102,7 @@ export default function Onboarding({ show, onDone }: OnboardingProps) {
       />
 
       {/* Card */}
-      <div className="relative w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden animate-scale-in">
+      <div className="relative w-full max-w-sm max-h-[90vh] bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden animate-scale-in">
         {/* Progress bar */}
         <div className="h-0.5 bg-zinc-800">
           <div

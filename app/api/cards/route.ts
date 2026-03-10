@@ -3,6 +3,7 @@ import {
   parsePokemonCard,
   parsePokemonSummary,
   parseOnePieceCard,
+  parseOnePieceCardWithHistory,
 } from "@/lib/cards-api";
 import { CardGame } from "@/types";
 import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
@@ -64,13 +65,14 @@ export async function GET(request: NextRequest) {
           break;
         }
         case "onepiece": {
+          // Use twoweeks endpoint for 14-day price history
           const res = await fetch(
-            `https://www.optcgapi.com/api/sets/card/${encodeURIComponent(cardId)}/`,
+            `https://www.optcgapi.com/api/sets/card/twoweeks/${encodeURIComponent(cardId)}/`,
             { next: { revalidate: 3600 } }
           );
           if (res.ok) {
             const data = await res.json();
-            if (Array.isArray(data) && data[0]) card = parseOnePieceCard(data[0]);
+            if (Array.isArray(data) && data[0]) card = parseOnePieceCardWithHistory(data[0]);
           }
           break;
         }
