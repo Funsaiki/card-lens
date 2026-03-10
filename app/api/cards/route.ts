@@ -7,7 +7,8 @@ import {
 } from "@/lib/cards-api";
 import { CardGame } from "@/types";
 import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
-import { loadAllRiftboundCardsWithRiot } from "@/lib/riftbound";
+import { loadAllRiftboundCardsWithRiot, loadAllRiftboundCards } from "@/lib/riftbound";
+import { attachHololivePricing, attachHololivePricingBatch, attachRiftboundPricing, attachRiftboundPricingBatch } from "@/lib/tcgcsv-pricing";
 import hololiveCardsData from "@/data/hololive-cards.json";
 
 export const dynamic = "force-dynamic";
@@ -78,12 +79,18 @@ export async function GET(request: NextRequest) {
         }
         case "riftbound": {
           const { cards: rbAll } = await loadAllRiftboundCardsWithRiot();
-          card = rbAll.find((c) => c.id === cardId) ?? null;
+          const rbCard = rbAll.find((c) => c.id === cardId) ?? null;
+          if (rbCard) {
+            // Get tcgplayer ID from local data for price matching
+            const rbRaw = await loadAllRiftboundCards();
+            const rawMatch = rbRaw.find((r) => r.id === cardId);
+            card = await attachRiftboundPricing(rbCard, rawMatch?.tcgplayer?.id);
+          }
           break;
         }
         case "hololive": {
           const raw = hololiveCards.find((c) => c.cardno === cardId);
-          if (raw) card = parseHololiveCard(raw);
+          if (raw) card = await attachHololivePricing(parseHololiveCard(raw));
           break;
         }
       }
@@ -148,9 +155,16 @@ export async function GET(request: NextRequest) {
       case "riftbound": {
         const { cards: rbAll } = await loadAllRiftboundCardsWithRiot();
         const q = query.toLowerCase();
-        cards = rbAll
+        const rbFiltered = rbAll
           .filter((c) => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
           .slice(0, 10);
+        // Build tcgplayer ID map from local data
+        const rbRawAll = await loadAllRiftboundCards();
+        const tcgIds = new Map<string, number>();
+        for (const r of rbRawAll) {
+          if (r.tcgplayer?.id) tcgIds.set(r.id, r.tcgplayer.id);
+        }
+        cards = await attachRiftboundPricingBatch(rbFiltered, tcgIds);
         break;
       }
       case "hololive": {
@@ -158,7 +172,7 @@ export async function GET(request: NextRequest) {
         const matches = hololiveCards
           .filter((c) => c.name.toLowerCase().includes(q) || c.cardno.toLowerCase().includes(q))
           .slice(0, 10);
-        cards = matches.map(parseHololiveCard);
+        cards = await attachHololivePricingBatch(matches.map(parseHololiveCard));
         break;
       }
     }
