@@ -167,95 +167,100 @@ function PriceHistoryChart({ history }: { history: PriceHistoryPoint[] }) {
   );
 }
 
-// ---------- TCGPlayer price range bar ----------
+// ---------- TCGPlayer price gauge ----------
 
-function TCGPlayerRangeBar({ data, label }: { data: TCGPlayerPrice; label: string }) {
+function TCGPlayerGauge({ data, label }: { data: TCGPlayerPrice; label: string }) {
   const low = data.low ?? 0;
   const high = data.high ?? 0;
-  const mid = data.mid;
   const market = data.market;
-  const directLow = data.directLow;
 
-  if (high === 0) return null;
+  if (high === 0 && market == null) return null;
 
   const rangeVal = high - low || 0.01;
-
-  function pct(val: number): number {
-    return ((val - low) / rangeVal) * 100;
-  }
+  const marketPct = market != null ? Math.min(Math.max(((market - low) / rangeVal) * 100, 0), 100) : 50;
 
   return (
-    <div className="space-y-2">
-      <span className="text-[10px] text-zinc-500">{label}</span>
+    <div className="space-y-3">
+      {label && <span className="text-[10px] text-zinc-500">{label}</span>}
 
-      <div className="relative h-6 bg-zinc-700/50 rounded-full overflow-hidden">
-        <div
-          className="absolute top-0 bottom-0 bg-green-500/20 rounded-full"
-          style={{ left: "0%", right: "0%" }}
-        />
-        {market != null && (
-          <div
-            className="absolute top-0 bottom-0 w-0.5 bg-green-400"
-            style={{ left: `${pct(market)}%` }}
-            title={`Market: $${market.toFixed(2)}`}
-          />
+      {/* Market price — big and centered */}
+      {market != null && (
+        <div className="text-center">
+          <p className="text-xl font-bold text-green-400">${market.toFixed(2)}</p>
+          <p className="text-[9px] text-zinc-500">Market Price</p>
+        </div>
+      )}
+
+      {/* Gauge bar */}
+      {high > 0 && (
+        <div className="space-y-1">
+          <div className="relative h-2 bg-zinc-700/60 rounded-full">
+            {/* Filled portion up to market */}
+            <div
+              className="absolute top-0 left-0 bottom-0 rounded-full bg-gradient-to-r from-green-500/40 to-green-400/60"
+              style={{ width: `${marketPct}%` }}
+            />
+            {/* Market dot */}
+            {market != null && (
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-green-400 border-2 border-zinc-800 shadow-sm shadow-green-400/30"
+                style={{ left: `${marketPct}%`, marginLeft: "-6px" }}
+              />
+            )}
+          </div>
+          {/* Low / High labels */}
+          <div className="flex justify-between text-[9px]">
+            <span className="text-zinc-500">${low.toFixed(2)}</span>
+            <span className="text-zinc-500">${high.toFixed(2)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Extra prices row */}
+      <div className="flex justify-center gap-4 text-[10px]">
+        {data.mid != null && (
+          <span className="text-zinc-400">
+            Mid <span className="text-zinc-300">${data.mid.toFixed(2)}</span>
+          </span>
         )}
-        {mid != null && (
-          <div
-            className="absolute top-0 bottom-0 w-0.5 bg-blue-400/60"
-            style={{ left: `${pct(mid)}%` }}
-            title={`Mid: $${mid.toFixed(2)}`}
-          />
-        )}
-        {directLow != null && (
-          <div
-            className="absolute top-0 bottom-0 w-0.5 bg-yellow-400/60"
-            style={{ left: `${pct(directLow)}%` }}
-            title={`Direct Low: $${directLow.toFixed(2)}`}
-          />
+        {data.directLow != null && (
+          <span className="text-zinc-400">
+            Direct <span className="text-zinc-300">${data.directLow.toFixed(2)}</span>
+          </span>
         )}
       </div>
-
-      <PriceGrid data={data} />
     </div>
   );
 }
 
-// ---------- Unified price grid (used by all TCGPlayer sections) ----------
+// ---------- Simple price display (when no range data) ----------
 
-function PriceGrid({ data }: { data: TCGPlayerPrice }) {
+function PriceSimple({ data }: { data: TCGPlayerPrice }) {
   return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
-      {data.low != null && (
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Low</span>
-          <span className="text-zinc-300">${data.low.toFixed(2)}</span>
-        </div>
-      )}
-      {data.mid != null && (
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Mid</span>
-          <span className="text-zinc-300">${data.mid.toFixed(2)}</span>
-        </div>
-      )}
+    <div className="space-y-2">
       {data.market != null && (
-        <div className="flex justify-between">
-          <span className="text-green-400">Market</span>
-          <span className="text-green-300">${data.market.toFixed(2)}</span>
+        <div className="text-center">
+          <p className="text-xl font-bold text-green-400">${data.market.toFixed(2)}</p>
+          <p className="text-[9px] text-zinc-500">Market Price</p>
         </div>
       )}
-      {data.high != null && (
-        <div className="flex justify-between">
-          <span className="text-zinc-500">High</span>
-          <span className="text-zinc-300">${data.high.toFixed(2)}</span>
-        </div>
-      )}
-      {data.directLow != null && (
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Direct</span>
-          <span className="text-zinc-300">${data.directLow.toFixed(2)}</span>
-        </div>
-      )}
+      <div className="flex justify-center gap-4 text-[10px]">
+        {data.low != null && (
+          <span className="text-zinc-400">
+            Low <span className="text-zinc-300">${data.low.toFixed(2)}</span>
+          </span>
+        )}
+        {data.mid != null && (
+          <span className="text-zinc-400">
+            Mid <span className="text-zinc-300">${data.mid.toFixed(2)}</span>
+          </span>
+        )}
+        {data.high != null && (
+          <span className="text-zinc-400">
+            High <span className="text-zinc-300">${data.high.toFixed(2)}</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -318,20 +323,20 @@ export default function PriceChart({ pricing }: PriceChartProps) {
               {hasHistory && (
                 <PriceHistoryChart history={pricing.priceHistory!} />
               )}
-              {/* Range bar charts (when high is available) */}
+              {/* Gauge charts (when high is available) */}
               {hasRange && (
                 <>
                   {pricing.tcgplayer && pricing.tcgplayer.high != null && (
-                    <TCGPlayerRangeBar data={pricing.tcgplayer} label={pricing.tcgplayerHolo ? "Normal" : "Price Range"} />
+                    <TCGPlayerGauge data={pricing.tcgplayer} label={pricing.tcgplayerHolo ? "Normal" : ""} />
                   )}
                   {pricing.tcgplayerHolo && pricing.tcgplayerHolo.high != null && (
-                    <TCGPlayerRangeBar data={pricing.tcgplayerHolo} label="Reverse Holo" />
+                    <TCGPlayerGauge data={pricing.tcgplayerHolo} label="Reverse Holo" />
                   )}
                 </>
               )}
-              {/* Price grid without range bar (when we have low/mid but no high) */}
+              {/* Simple price display (when no range data) */}
               {!hasRange && !hasHistory && pricing.tcgplayer && (
-                <PriceGrid data={pricing.tcgplayer} />
+                <PriceSimple data={pricing.tcgplayer} />
               )}
             </div>
           )}
