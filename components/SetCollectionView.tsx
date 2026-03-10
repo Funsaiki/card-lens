@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { CardGame, CollectionItem } from "@/types";
+import { toast } from "sonner";
+import { CardGame, CollectionItem, CardCondition, CONDITION_LABELS } from "@/types";
 import { fetchSets, fetchSetCards, getCardImageUrl, GameSet, SetCard } from "@/lib/indexer";
 import Dropdown from "@/components/Dropdown";
+import { SkeletonCardGrid, SkeletonSetStats } from "@/components/Skeleton";
+
+const CONDITIONS: CardCondition[] = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
 
 interface Props {
   game: CardGame;
@@ -18,18 +22,29 @@ type AddState = "idle" | "adding" | "added";
 
 // ---------- Fullscreen lightbox ----------
 
-function CardLightbox({ card, game, owned, onAdd, onRemove, onClose, directImage }: {
+function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUpdate, onClose, directImage }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
+  collectionItem?: CollectionItem;
   onAdd?: () => Promise<void>;
   onRemove?: () => Promise<void>;
+  onUpdate?: (rowId: string, updates: { condition?: CardCondition; quantity?: number; notes?: string }) => Promise<void>;
   onClose: () => void;
   directImage?: boolean;
 }) {
   const [addState, setAddState] = useState<AddState>("idle");
   const [removeState, setRemoveState] = useState<"idle" | "removing" | "removed">("idle");
+  const [condition, setCondition] = useState<CardCondition>(collectionItem?.condition ?? "near_mint");
+  const [quantity, setQuantity] = useState(collectionItem?.quantity ?? 1);
+  const [saving, setSaving] = useState(false);
   const isOwned = (owned || addState === "added") && removeState !== "removed";
+
+  // Track if user changed anything
+  const hasChanges = isOwned && collectionItem && (
+    condition !== collectionItem.condition ||
+    quantity !== collectionItem.quantity
+  );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -45,8 +60,10 @@ function CardLightbox({ card, game, owned, onAdd, onRemove, onClose, directImage
     try {
       await onAdd();
       setAddState("added");
+      toast.success(`${card.name} added`);
     } catch {
       setAddState("idle");
+      toast.error("Failed to add card");
     }
   };
 
@@ -56,9 +73,23 @@ function CardLightbox({ card, game, owned, onAdd, onRemove, onClose, directImage
     try {
       await onRemove();
       setRemoveState("removed");
+      toast.success(`${card.name} removed`);
     } catch {
       setRemoveState("idle");
+      toast.error("Failed to remove card");
     }
+  };
+
+  const handleSave = async () => {
+    if (!onUpdate || !collectionItem || saving) return;
+    setSaving(true);
+    try {
+      await onUpdate(collectionItem.id, { condition, quantity });
+      toast.success("Changes saved");
+    } catch {
+      toast.error("Failed to save changes");
+    }
+    setSaving(false);
   };
 
   const imageUrl = directImage ? (card.image ?? "") : getHighResImageUrl(card, game);
@@ -69,7 +100,7 @@ function CardLightbox({ card, game, owned, onAdd, onRemove, onClose, directImage
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col items-center gap-4 max-w-sm w-full mx-4"
+        className="relative flex flex-col items-center gap-4 max-w-sm w-full mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -83,7 +114,7 @@ function CardLightbox({ card, game, owned, onAdd, onRemove, onClose, directImage
         </button>
 
         {/* Card image */}
-        <div className="w-full aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-2xl shadow-black/60 border border-white/[0.1]">
+        <div className="w-full aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-2xl shadow-black/60 border border-white/[0.1] flex-shrink-0">
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -99,37 +130,102 @@ function CardLightbox({ card, game, owned, onAdd, onRemove, onClose, directImage
         </div>
 
         {/* Card info + actions */}
-        <div className="w-full bg-[var(--surface-light)] border border-white/[0.08] rounded-xl p-3 space-y-2">
+        <div className="w-full bg-[var(--surface-light)] border border-white/[0.08] rounded-xl p-3 space-y-3">
           <div>
             <p className="text-sm font-medium text-zinc-200">{card.name}</p>
             <p className="text-[11px] text-[var(--muted)]">{card.id}</p>
           </div>
 
           {isOwned ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs text-green-400">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-                In collection
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs text-green-400">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  In collection
+                </div>
+                {onRemove && (
+                  <button
+                    onClick={handleRemove}
+                    disabled={removeState === "removing"}
+                    className="flex items-center gap-1 px-2 py-1 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-50"
+                  >
+                    {removeState === "removing" ? (
+                      <span className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
+                    Remove
+                  </button>
+                )}
               </div>
-              {onRemove && (
-                <button
-                  onClick={handleRemove}
-                  disabled={removeState === "removing"}
-                  className="flex items-center gap-1 px-2 py-1 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-50"
-                >
-                  {removeState === "removing" ? (
-                    <span className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                  ) : (
+
+              {/* Condition selector */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Condition</label>
+                <div className="grid grid-cols-3 gap-1">
+                  {CONDITIONS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setCondition(c)}
+                      className={`px-2 py-1.5 text-[10px] rounded-md border transition-all ${
+                        condition === c
+                          ? "border-indigo-500/50 bg-indigo-500/15 text-indigo-300 font-medium"
+                          : "border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.12]"
+                      }`}
+                    >
+                      {CONDITION_LABELS[c]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quantity */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Quantity</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/[0.08] text-zinc-400 hover:text-white hover:border-white/[0.15] transition-colors disabled:opacity-30 disabled:hover:text-zinc-400"
+                  >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                     </svg>
+                  </button>
+                  <span className="text-sm font-medium text-zinc-200 w-8 text-center">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(Math.min(9999, quantity + 1))}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/[0.08] text-zinc-400 hover:text-white hover:border-white/[0.15] transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Save button */}
+              {hasChanges && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white transition-all"
+                >
+                  {saving ? (
+                    <>
+                      <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save changes"
                   )}
-                  Remove
                 </button>
               )}
-            </div>
+            </>
           ) : onAdd ? (
             <button
               onClick={handleAdd}
@@ -303,6 +399,12 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     [ownedCards]
   );
 
+  // Map cardId → full CollectionItem for lightbox editing
+  const cardIdToItem = useMemo(
+    () => new Map(ownedCards.map((c) => [c.cardId, c])),
+    [ownedCards]
+  );
+
   // Reset local state when set changes
   useEffect(() => {
     setLocallyAdded(new Set());
@@ -391,10 +493,22 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     onCardAdded?.(); // refresh parent data
   }, [cardIdToRowId, onCardAdded]);
 
+  const updateCard = useCallback(async (rowId: string, updates: { condition?: CardCondition; quantity?: number; notes?: string }) => {
+    const res = await fetch(`/api/collection/${rowId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) throw new Error("Failed to update");
+    onCardAdded?.(); // refresh parent data
+  }, [onCardAdded]);
+
   if (loadingSets) {
     return (
-      <div className="flex justify-center py-12">
-        <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="p-4 space-y-3">
+        <div className="h-8 bg-white/[0.04] rounded-lg animate-pulse" />
+        <SkeletonSetStats />
+        <SkeletonCardGrid count={12} />
       </div>
     );
   }
@@ -468,9 +582,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
       {/* Cards grid */}
       <div className="p-4">
         {!isAllView && loadingCards ? (
-          <div className="flex justify-center py-12">
-            <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <SkeletonCardGrid count={12} />
         ) : sortedCards.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-sm text-[var(--muted)]">
@@ -503,8 +615,10 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
           card={lightboxCard}
           game={game}
           owned={ownedCardIds.has(lightboxCard.id)}
+          collectionItem={cardIdToItem.get(lightboxCard.id)}
           onAdd={!ownedCardIds.has(lightboxCard.id) ? () => addCard(lightboxCard) : undefined}
           onRemove={ownedCardIds.has(lightboxCard.id) && cardIdToRowId.has(lightboxCard.id) ? () => removeCard(lightboxCard) : undefined}
+          onUpdate={updateCard}
           onClose={() => setLightboxCard(null)}
           directImage={isAllView}
         />

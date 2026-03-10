@@ -39,9 +39,9 @@ export default function SearchResults({
       </div>
 
       <div className="overflow-y-auto flex-1">
-        {results.map((card) => (
+        {results.map((card, idx) => (
           <button
-            key={card.id}
+            key={`${card.id}-${idx}`}
             onClick={() => onSelect(card)}
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors text-left border-b border-white/[0.04] last:border-b-0"
           >

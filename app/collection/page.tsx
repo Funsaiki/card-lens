@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { CardGame, CollectionItem, CardCondition, GAME_LABELS, PortfolioSummary, PortfolioHistory, CollectionStats } from "@/types";
 import NavBar from "@/components/NavBar";
@@ -10,6 +11,7 @@ import SetCollectionView from "@/components/SetCollectionView";
 import PortfolioValueCard from "@/components/PortfolioValueCard";
 import PortfolioChart from "@/components/PortfolioChart";
 import StatsPanel from "@/components/StatsPanel";
+import { SkeletonDashboard, SkeletonStats } from "@/components/Skeleton";
 
 const GAMES: { id: CardGame; color: string; gradient: string; icon: React.ReactNode }[] = [
   {
@@ -105,6 +107,7 @@ export default function CollectionPage() {
   const [history, setHistory] = useState<PortfolioHistory | null>(null);
   const [stats, setStats] = useState<CollectionStats | null>(null);
   const [dashTab, setDashTab] = useState<"overview" | "stats">("overview");
+  const [refreshing, setRefreshing] = useState(false);
 
   const openGame = useCallback((game: CardGame, setId?: string | null) => {
     setInitialSetId(setId ?? null);
@@ -206,8 +209,8 @@ export default function CollectionPage() {
 
       <div className="p-4 max-w-3xl mx-auto">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="pt-4">
+            <SkeletonDashboard />
           </div>
         ) : (
           <>
@@ -215,6 +218,37 @@ export default function CollectionPage() {
             {totalCards > 0 && portfolio && (
               <div className="pt-4 mb-4">
                 <PortfolioValueCard portfolio={portfolio} />
+                {/* Refresh prices button */}
+                <div className="flex justify-center mt-2">
+                  <button
+                    onClick={async () => {
+                      setRefreshing(true);
+                      try {
+                        const res = await fetch("/api/collection/refresh-prices", { method: "POST" });
+                        if (res.ok) {
+                          const data = await res.json();
+                          toast.success(`${data.updated} price${data.updated !== 1 ? "s" : ""} updated`);
+                          await fetchCollection();
+                        } else {
+                          toast.error("Failed to refresh prices");
+                        }
+                      } catch {
+                        toast.error("Failed to refresh prices");
+                      }
+                      setRefreshing(false);
+                    }}
+                    disabled={refreshing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-zinc-400 hover:text-zinc-200 bg-zinc-800/50 hover:bg-zinc-800 border border-white/[0.06] rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <svg
+                      className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {refreshing ? "Updating prices..." : "Refresh prices"}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -280,8 +314,8 @@ export default function CollectionPage() {
               </div>
             )}
             {dashTab === "stats" && !stats && totalCards > 0 && (
-              <div className="flex justify-center py-8">
-                <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <div className="mb-6">
+                <SkeletonStats />
               </div>
             )}
 
