@@ -9,6 +9,7 @@ import { CardGame } from "@/types";
 import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
 import { loadAllRiftboundCardsWithRiot, loadAllRiftboundCards } from "@/lib/riftbound";
 import { attachHololivePricing, attachHololivePricingBatch, attachRiftboundPricing, attachRiftboundPricingBatch } from "@/lib/tcgcsv-pricing";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import hololiveCardsData from "@/data/hololive-cards.json";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,15 @@ const hololiveCards = hololiveCardsData as HololiveRawCard[];
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit: 30 requests per 10 seconds per IP
+    const ip = getClientIp(request.headers);
+    const rl = rateLimit(`cards:${ip}`, 30, 10_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      );
+    }
     const { searchParams } = new URL(request.url);
     const game = searchParams.get("game") as CardGame | null;
     const query = searchParams.get("query");

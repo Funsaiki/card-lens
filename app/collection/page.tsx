@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { CardGame, CollectionItem, CardCondition, CardVariant, GAME_LABELS, PortfolioSummary, PortfolioHistory, CollectionStats } from "@/types";
 import NavBar from "@/components/NavBar";
 import AuthModal from "@/components/AuthModal";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import SetCollectionView from "@/components/SetCollectionView";
 import PortfolioValueCard from "@/components/PortfolioValueCard";
 import PortfolioChart from "@/components/PortfolioChart";
@@ -102,8 +103,7 @@ export default function CollectionPage() {
   const { user, loading: authLoading } = useUser();
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeGame, setActiveGame] = useState<CardGame | null>(null);
-  const [initialSetId, setInitialSetId] = useState<string | null>(null);
+  const [gameView, setGameView] = useState<{ game: CardGame; setId: string | null } | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [history, setHistory] = useState<PortfolioHistory | null>(null);
@@ -112,8 +112,7 @@ export default function CollectionPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const openGame = useCallback((game: CardGame, setId?: string | null) => {
-    setInitialSetId(setId ?? null);
-    setActiveGame(game);
+    setGameView({ game, setId: setId ?? null });
   }, []);
 
   const fetchCollection = useCallback(async () => {
@@ -174,15 +173,15 @@ export default function CollectionPage() {
   const totalCards = items.length;
 
   // Game detail view
-  if (activeGame) {
-    const game = gameStats.find((g) => g.id === activeGame)!;
-    const gameItems = items.filter((i) => i.game === activeGame);
+  if (gameView) {
+    const game = gameStats.find((g) => g.id === gameView.game)!;
+    const gameItems = items.filter((i) => i.game === gameView.game);
     return (
       <div className="min-h-screen">
         <NavBar />
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06]">
           <button
-            onClick={() => { setActiveGame(null); setInitialSetId(null); }}
+            onClick={() => setGameView(null)}
             className="text-zinc-400 hover:text-white transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -192,14 +191,16 @@ export default function CollectionPage() {
           <div className={`w-5 h-5 text-transparent bg-gradient-to-r ${game.color} bg-clip-text`}>
             {game.icon}
           </div>
-          <h1 className="text-sm font-semibold text-white">{GAME_LABELS[activeGame]}</h1>
+          <h1 className="text-sm font-semibold text-white">{GAME_LABELS[gameView.game]}</h1>
           {game.unique > 0 && (
             <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full">
               {game.unique} cards
             </span>
           )}
         </div>
-        <SetCollectionView game={activeGame} ownedCards={gameItems} onCardAdded={fetchCollection} initialSetId={initialSetId} />
+        <ErrorBoundary>
+          <SetCollectionView game={gameView.game} ownedCards={gameItems} onCardAdded={fetchCollection} initialSetId={gameView.setId} />
+        </ErrorBoundary>
       </div>
     );
   }

@@ -11,6 +11,7 @@ import SearchResults from "@/components/SearchResults";
 import SetIndexer from "@/components/SetIndexer";
 import Onboarding, { useOnboarding } from "@/components/Onboarding";
 import NavBar from "@/components/NavBar";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { SkeletonSearchResults } from "@/components/Skeleton";
 
 import { useWebRTC } from "@/hooks/useWebRTC";
@@ -569,14 +570,16 @@ function ScanContent() {
 
 export default function ScanPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="h-screen flex items-center justify-center">
-          <p className="text-[var(--muted)]">Loading...</p>
-        </div>
-      }
-    >
-      <ScanContent />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense
+        fallback={
+          <div className="h-screen flex items-center justify-center">
+            <p className="text-[var(--muted)]">Loading...</p>
+          </div>
+        }
+      >
+        <ScanContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

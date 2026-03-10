@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { CardData } from "@/types";
@@ -17,6 +17,10 @@ export default function AddToCollectionButton({ card }: AddToCollectionButtonPro
   const [status, setStatus] = useState<AddStatus>("idle");
   const [quantity, setQuantity] = useState<number | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Cleanup timeout on unmount
+  useEffect(() => () => { clearTimeout(resetTimerRef.current); }, []);
 
   const handleAdd = useCallback(async () => {
     if (!user) {
@@ -44,11 +48,11 @@ export default function AddToCollectionButton({ card }: AddToCollectionButtonPro
       toast.success(data.quantity > 1 ? `${card.name} (x${data.quantity})` : `${card.name} added`);
 
       // Reset after 3 seconds
-      setTimeout(() => setStatus("idle"), 3000);
+      resetTimerRef.current = setTimeout(() => setStatus("idle"), 3000);
     } catch {
       setStatus("error");
       toast.error("Failed to add card");
-      setTimeout(() => setStatus("idle"), 3000);
+      resetTimerRef.current = setTimeout(() => setStatus("idle"), 3000);
     }
   }, [user, card]);
 

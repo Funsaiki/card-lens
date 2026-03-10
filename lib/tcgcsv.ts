@@ -13,6 +13,17 @@ const BASE = "https://tcgcsv.com/tcgplayer";
 // Cache prices in memory for the lifetime of the serverless function
 const priceCache = new Map<string, { data: TCGCSVPriceMap; ts: number }>();
 const CACHE_TTL = 3600_000; // 1 hour
+const MAX_CACHE_SIZE = 50;
+
+/** Evict expired entries; if still over limit, clear all. */
+function pruneCache<K, V extends { ts: number }>(cache: Map<K, V>, max: number, ttl: number) {
+  if (cache.size <= max) return;
+  const now = Date.now();
+  for (const [key, val] of cache) {
+    if (now - val.ts > ttl) cache.delete(key);
+  }
+  if (cache.size > max) cache.clear();
+}
 
 export interface TCGCSVProduct {
   productId: number;
@@ -100,6 +111,7 @@ export async function fetchPrices(categoryId: number, groupId: number): Promise<
       }
     }
   }
+  pruneCache(priceCache, MAX_CACHE_SIZE, CACHE_TTL);
   priceCache.set(cacheKey, { data: map, ts: Date.now() });
   return map;
 }
