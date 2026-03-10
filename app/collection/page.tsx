@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { CardGame, CollectionItem, CardCondition, GAME_LABELS } from "@/types";
+import NavBar from "@/components/NavBar";
 import AuthModal from "@/components/AuthModal";
 import SetCollectionView from "@/components/SetCollectionView";
 
@@ -127,16 +128,19 @@ export default function CollectionPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6">
-        <h1 className="text-xl font-bold text-white mb-2">My Collection</h1>
-        <p className="text-sm text-[var(--muted)] mb-4">Sign in to view your card collection</p>
-        <button
-          onClick={() => setShowAuth(true)}
-          className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          Sign in
-        </button>
-        <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
+      <div className="min-h-screen flex flex-col">
+        <NavBar />
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <h1 className="text-xl font-bold text-white mb-2">My Collection</h1>
+          <p className="text-sm text-[var(--muted)] mb-4">Sign in to view your card collection</p>
+          <button
+            onClick={() => setShowAuth(true)}
+            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Sign in
+          </button>
+          <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
+        </div>
       </div>
     );
   }
@@ -158,27 +162,26 @@ export default function CollectionPage() {
     const gameItems = items.filter((i) => i.game === activeGame);
     return (
       <div className="min-h-screen">
-        <header className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => { setActiveGame(null); setInitialSetId(null); }}
-              className="text-zinc-400 hover:text-white transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div className={`w-5 h-5 text-transparent bg-gradient-to-r ${game.color} bg-clip-text`}>
-              {game.icon}
-            </div>
-            <h1 className="text-sm font-semibold text-white">{GAME_LABELS[activeGame]}</h1>
-            {game.unique > 0 && (
-              <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full">
-                {game.unique} cards
-              </span>
-            )}
+        <NavBar />
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06]">
+          <button
+            onClick={() => { setActiveGame(null); setInitialSetId(null); }}
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className={`w-5 h-5 text-transparent bg-gradient-to-r ${game.color} bg-clip-text`}>
+            {game.icon}
           </div>
-        </header>
+          <h1 className="text-sm font-semibold text-white">{GAME_LABELS[activeGame]}</h1>
+          {game.unique > 0 && (
+            <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full">
+              {game.unique} cards
+            </span>
+          )}
+        </div>
         <SetCollectionView game={activeGame} ownedCards={gameItems} onCardAdded={fetchCollection} initialSetId={initialSetId} />
       </div>
     );
@@ -187,22 +190,7 @@ export default function CollectionPage() {
   // Dashboard view
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="text-zinc-400 hover:text-white transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          <h1 className="text-sm font-semibold text-white">My Collection</h1>
-          {totalCards > 0 && (
-            <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full">
-              {totalCards} cards
-            </span>
-          )}
-        </div>
-      </header>
+      <NavBar />
 
       <div className="p-4 max-w-3xl mx-auto">
         {loading ? (

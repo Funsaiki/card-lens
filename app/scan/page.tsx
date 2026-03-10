@@ -36,6 +36,7 @@ function ScanContent() {
   const [lastSearchQuery, setLastSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const { show: showOnboarding, dismiss: dismissOnboarding, reopen: reopenOnboarding } = useOnboarding();
   const { user } = useUser();
   const [showAuth, setShowAuth] = useState(false);
@@ -151,6 +152,7 @@ function ScanContent() {
   useEffect(() => {
     if (currentCard) {
       setSidebarTab("info");
+      setMobilePanelOpen(true);
     }
   }, [currentCard]);
 
@@ -168,6 +170,7 @@ function ScanContent() {
     setSearchResults(results);
     setIsSearching(false);
     setSidebarOpen(true);
+    setMobilePanelOpen(true);
 
     if (results.length > 1) {
       setSidebarTab("results");
@@ -201,29 +204,103 @@ function ScanContent() {
     { id: "history", label: "History", badge: history.length > 0 ? String(history.length) : undefined },
   ], [indexedCount, searchResults.length, history.length]);
 
+  const handleMobileTab = useCallback((tab: SidebarTab) => {
+    if (mobilePanelOpen && sidebarTab === tab) {
+      setMobilePanelOpen(false);
+    } else {
+      setSidebarTab(tab);
+      setMobilePanelOpen(true);
+    }
+  }, [mobilePanelOpen, sidebarTab]);
+
+  const panelContent = (
+    sidebarTab === "index" ? (
+      <SetIndexer
+        game={game}
+        onIndexComplete={handleIndexComplete}
+        indexedCount={indexedCount}
+        indexedSets={indexedSets}
+        onRemoveSet={removeSet}
+        dbLoading={dbLoading}
+      />
+    ) : sidebarTab === "info" ? (
+      <CardInfo card={currentCard} confidence={confidence} />
+    ) : sidebarTab === "results" ? (
+      <SearchResults
+        query={lastSearchQuery}
+        results={searchResults}
+        onSelect={handleResultSelect}
+        onClose={handleCloseResults}
+      />
+    ) : (
+      <SessionHistory
+        history={history}
+        onSelect={handleHistorySelect}
+        onClear={clearHistory}
+      />
+    )
+  );
+
   return (
-    <div className="h-screen flex flex-col">
-      {/* Top bar */}
-      <header className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md">
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Link
-            href="/"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          <span className="text-sm font-medium text-zinc-200">{gameLabel}</span>
-          {indexedCount > 0 && (
-            <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full hidden sm:inline">
-              {indexedCount} indexed
-            </span>
-          )}
+    <div className="fixed inset-0 flex flex-col overflow-hidden">
+      {/* Top bar — row 1: nav + actions */}
+      <header className="flex flex-col border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md flex-shrink-0">
+        <div className="flex items-center justify-between gap-2 px-3 py-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link
+              href="/"
+              className="text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <span className="text-sm font-medium text-zinc-200 truncate">{gameLabel}</span>
+            {indexedCount > 0 && (
+              <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline">
+                {indexedCount} indexed
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {user ? (
+              <UserMenu user={user} />
+            ) : (
+              <button
+                onClick={() => setShowAuth(true)}
+                className="px-2 py-1 text-[11px] text-zinc-400 hover:text-white transition-colors"
+              >
+                Sign in
+              </button>
+            )}
+            <button
+              onClick={reopenOnboarding}
+              className="p-1.5 text-zinc-500 hover:text-white transition-colors"
+              title="How to use"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="p-1.5 text-zinc-400 hover:text-white transition-colors lg:inline hidden"
+              title={sidebarOpen ? "Hide panel" : "Show panel"}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {sidebarOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Search */}
-        <form onSubmit={handleSearch} className="flex items-center gap-1.5 flex-1 max-w-xs ml-2">
+        {/* Row 2: search bar */}
+        <form onSubmit={handleSearch} className="flex items-center gap-1.5 px-3 pb-2">
           <input
             type="text"
             value={searchQuery}
@@ -239,53 +316,16 @@ function ScanContent() {
             {isSearching ? "..." : "Go"}
           </button>
         </form>
-
-        {/* Help + User + Sidebar toggle */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {user ? (
-            <UserMenu user={user} />
-          ) : (
-            <button
-              onClick={() => setShowAuth(true)}
-              className="px-2 py-1 text-[11px] text-zinc-400 hover:text-white transition-colors"
-            >
-              Sign in
-            </button>
-          )}
-          <button
-            onClick={reopenOnboarding}
-            className="p-1.5 text-zinc-500 hover:text-white transition-colors"
-            title="How to use"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="p-1.5 text-zinc-400 hover:text-white transition-colors"
-            title={sidebarOpen ? "Hide panel" : "Show panel"}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {sidebarOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
-              )}
-            </svg>
-          </button>
-        </div>
       </header>
 
       {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Video area */}
-        <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        {/* Video area — full height on mobile, flex-1 on desktop */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Video source selector */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02]">
             <span className="text-[11px] text-[var(--muted)]">Source:</span>
             <div className="relative flex bg-white/[0.04] rounded-full border border-white/[0.06] p-0.5">
-              {/* Animated pill */}
               <div
                 className="absolute top-0.5 bottom-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/25 transition-all duration-300 ease-out"
                 style={{
@@ -326,7 +366,7 @@ function ScanContent() {
           </div>
 
           {/* Video feed + overlay */}
-          <div className="flex-1 relative m-2">
+          <div className="flex-1 relative m-2 pb-8 lg:pb-0">
             {videoSource === "phone" &&
             connectionState !== "connected" ? (
               <div className="h-full flex items-center justify-center">
@@ -354,15 +394,21 @@ function ScanContent() {
                 />
               </VideoFeed>
             )}
+
+            {/* Mobile backdrop — tap to close panel */}
+            {mobilePanelOpen && (
+              <div
+                className="lg:hidden absolute inset-0 z-20 bg-black/40"
+                onClick={() => setMobilePanelOpen(false)}
+              />
+            )}
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Desktop sidebar — hidden on mobile */}
         {sidebarOpen && (
-          <aside className="w-72 xl:w-80 border-l border-white/[0.06] bg-white/[0.02] backdrop-blur-sm flex flex-col flex-shrink-0 animate-slide-in-right">
-            {/* Tabs */}
+          <aside className="hidden lg:flex w-72 xl:w-80 border-l border-white/[0.06] bg-white/[0.02] backdrop-blur-sm flex-col flex-shrink-0">
             <div className="relative flex border-b border-white/[0.06]">
-              {/* Animated indicator */}
               <div
                 className="absolute bottom-0 h-[2px] bg-indigo-500 rounded-full transition-all duration-300 ease-out"
                 style={{
@@ -375,51 +421,63 @@ function ScanContent() {
                   key={tab.id}
                   onClick={() => setSidebarTab(tab.id)}
                   className={`flex-1 py-2 text-[11px] font-medium transition-colors relative ${
-                    sidebarTab === tab.id
-                      ? "text-white"
-                      : "text-zinc-500 hover:text-zinc-300"
+                    sidebarTab === tab.id ? "text-white" : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
                   {tab.label}
                   {tab.badge && (
-                    <span className="ml-0.5 text-[9px] text-[var(--muted)]">
-                      {tab.badge}
-                    </span>
+                    <span className="ml-0.5 text-[9px] text-[var(--muted)]">{tab.badge}</span>
                   )}
                 </button>
               ))}
             </div>
-
-            {/* Tab content */}
-            <div className="flex-1 overflow-y-auto">
-              {sidebarTab === "index" ? (
-                <SetIndexer
-                  game={game}
-                  onIndexComplete={handleIndexComplete}
-                  indexedCount={indexedCount}
-                  indexedSets={indexedSets}
-                  onRemoveSet={removeSet}
-                  dbLoading={dbLoading}
-                />
-              ) : sidebarTab === "info" ? (
-                <CardInfo card={currentCard} confidence={confidence} />
-              ) : sidebarTab === "results" ? (
-                <SearchResults
-                  query={lastSearchQuery}
-                  results={searchResults}
-                  onSelect={handleResultSelect}
-                  onClose={handleCloseResults}
-                />
-              ) : (
-                <SessionHistory
-                  history={history}
-                  onSelect={handleHistorySelect}
-                  onClear={clearHistory}
-                />
-              )}
-            </div>
+            <div className="flex-1 overflow-y-auto">{panelContent}</div>
           </aside>
         )}
+
+        {/* Mobile bottom sheet — hidden on desktop */}
+        <div
+          className="lg:hidden fixed inset-x-0 bottom-0 z-30 flex flex-col transition-transform duration-300 ease-out"
+          style={{ transform: mobilePanelOpen ? "translateY(0)" : "translateY(calc(100% - 2.75rem))" }}
+        >
+          {/* Tab bar (always peeking at bottom) */}
+          <div className="relative flex flex-wrap bg-zinc-900 border-t border-white/[0.06] rounded-t-2xl flex-shrink-0">
+            {/* Drag handle — tappable close area */}
+            <button
+              onClick={() => setMobilePanelOpen((v) => !v)}
+              className="w-full flex justify-center py-2 -mb-1"
+            >
+              <div className="w-10 h-1.5 rounded-full bg-zinc-600" />
+            </button>
+            {/* Animated indicator */}
+            <div
+              className="absolute bottom-0 h-[2px] bg-indigo-500 rounded-full transition-all duration-300 ease-out"
+              style={{
+                width: `${100 / tabs.length}%`,
+                left: `${(tabs.findIndex((t) => t.id === sidebarTab) / tabs.length) * 100}%`,
+              }}
+            />
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleMobileTab(tab.id)}
+                className={`flex-1 py-3 text-[11px] font-medium transition-colors relative ${
+                  sidebarTab === tab.id ? "text-white" : "text-zinc-500"
+                }`}
+              >
+                {tab.label}
+                {tab.badge && (
+                  <span className={`ml-0.5 text-[9px] ${sidebarTab === tab.id ? "text-indigo-400" : "text-zinc-600"}`}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Panel content */}
+          <div className="h-[60vh] bg-zinc-900 overflow-y-auto">{panelContent}</div>
+        </div>
       </div>
 
       <Onboarding show={showOnboarding} onDone={dismissOnboarding} />

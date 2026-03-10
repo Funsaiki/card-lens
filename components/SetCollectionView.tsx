@@ -18,16 +18,18 @@ type AddState = "idle" | "adding" | "added";
 
 // ---------- Fullscreen lightbox ----------
 
-function CardLightbox({ card, game, owned, onAdd, onClose, directImage }: {
+function CardLightbox({ card, game, owned, onAdd, onRemove, onClose, directImage }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
   onAdd?: () => Promise<void>;
+  onRemove?: () => Promise<void>;
   onClose: () => void;
   directImage?: boolean;
 }) {
   const [addState, setAddState] = useState<AddState>("idle");
-  const isOwned = owned || addState === "added";
+  const [removeState, setRemoveState] = useState<"idle" | "removing" | "removed">("idle");
+  const isOwned = (owned || addState === "added") && removeState !== "removed";
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -45,6 +47,17 @@ function CardLightbox({ card, game, owned, onAdd, onClose, directImage }: {
       setAddState("added");
     } catch {
       setAddState("idle");
+    }
+  };
+
+  const handleRemove = async () => {
+    if (!onRemove || removeState !== "idle") return;
+    setRemoveState("removing");
+    try {
+      await onRemove();
+      setRemoveState("removed");
+    } catch {
+      setRemoveState("idle");
     }
   };
 
@@ -93,11 +106,29 @@ function CardLightbox({ card, game, owned, onAdd, onClose, directImage }: {
           </div>
 
           {isOwned ? (
-            <div className="flex items-center gap-1.5 text-xs text-green-400">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-              In collection
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs text-green-400">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                In collection
+              </div>
+              {onRemove && (
+                <button
+                  onClick={handleRemove}
+                  disabled={removeState === "removing"}
+                  className="flex items-center gap-1 px-2 py-1 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-50"
+                >
+                  {removeState === "removing" ? (
+                    <span className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  )}
+                  Remove
+                </button>
+              )}
             </div>
           ) : onAdd ? (
             <button
@@ -255,18 +286,27 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
 
   // Set of owned card IDs for quick lookup (includes locally added)
   const [locallyAdded, setLocallyAdded] = useState<Set<string>>(new Set());
+  const [locallyRemoved, setLocallyRemoved] = useState<Set<string>>(new Set());
   const ownedCardIds = useMemo(
     () => {
       const ids = new Set(ownedCards.map((c) => c.cardId));
       for (const id of locallyAdded) ids.add(id);
+      for (const id of locallyRemoved) ids.delete(id);
       return ids;
     },
-    [ownedCards, locallyAdded]
+    [ownedCards, locallyAdded, locallyRemoved]
   );
 
-  // Reset locally added when set changes
+  // Map cardId → Supabase row ID for delete
+  const cardIdToRowId = useMemo(
+    () => new Map(ownedCards.map((c) => [c.cardId, c.id])),
+    [ownedCards]
+  );
+
+  // Reset local state when set changes
   useEffect(() => {
     setLocallyAdded(new Set());
+    setLocallyRemoved(new Set());
   }, [selectedSetId]);
 
   // Fetch sets list
@@ -341,6 +381,15 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     setLocallyAdded((prev) => new Set(prev).add(card.id));
     onCardAdded?.();
   }, [game, selectedSet?.name, selectedSetId, onCardAdded]);
+
+  const removeCard = useCallback(async (card: SetCard) => {
+    const rowId = cardIdToRowId.get(card.id);
+    if (!rowId) return;
+    const res = await fetch(`/api/collection/${rowId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to remove");
+    setLocallyRemoved((prev) => new Set(prev).add(card.id));
+    onCardAdded?.(); // refresh parent data
+  }, [cardIdToRowId, onCardAdded]);
 
   if (loadingSets) {
     return (
@@ -455,6 +504,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
           game={game}
           owned={ownedCardIds.has(lightboxCard.id)}
           onAdd={!ownedCardIds.has(lightboxCard.id) ? () => addCard(lightboxCard) : undefined}
+          onRemove={ownedCardIds.has(lightboxCard.id) && cardIdToRowId.has(lightboxCard.id) ? () => removeCard(lightboxCard) : undefined}
           onClose={() => setLightboxCard(null)}
           directImage={isAllView}
         />
