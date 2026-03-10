@@ -303,13 +303,16 @@ function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUp
   );
 }
 
-function LazyCard({ card, game, owned, onAdd, onClick, directImage }: {
+function LazyCard({ card, game, owned, onAdd, onClick, directImage, selecting, selected, onToggleSelect }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
   onAdd?: () => Promise<void>;
   onClick?: () => void;
   directImage?: boolean;
+  selecting?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -343,17 +346,27 @@ function LazyCard({ card, game, owned, onAdd, onClick, directImage }: {
     }
   };
 
+  const handleClick = () => {
+    if (selecting && onToggleSelect) {
+      onToggleSelect();
+    } else {
+      onClick?.();
+    }
+  };
+
   const imageUrl = directImage ? (card.image ?? "") : getCardImageUrl(card, game);
   const isOwned = owned || addState === "added";
 
   return (
     <div
       ref={ref}
-      onClick={onClick}
+      onClick={handleClick}
       className={`group/card relative aspect-[2.5/3.5] bg-zinc-800/50 rounded-lg overflow-hidden border transition-all cursor-pointer ${
-        isOwned
-          ? "border-indigo-500/30 shadow-sm shadow-indigo-500/10"
-          : "border-white/[0.04] opacity-35 grayscale hover:opacity-80 hover:grayscale-0"
+        selecting && selected
+          ? "border-red-500/60 shadow-sm shadow-red-500/20 ring-2 ring-red-500/30"
+          : isOwned
+            ? "border-indigo-500/30 shadow-sm shadow-indigo-500/10"
+            : "border-white/[0.04] opacity-35 grayscale hover:opacity-80 hover:grayscale-0"
       }`}
     >
       {visible && imageUrl ? (
@@ -370,8 +383,25 @@ function LazyCard({ card, game, owned, onAdd, onClick, directImage }: {
         <div className="absolute inset-0 bg-zinc-800/50" />
       )}
 
+      {/* Selection checkbox */}
+      {selecting && (
+        <div className="absolute top-1.5 left-1.5 z-10">
+          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+            selected
+              ? "border-red-500 bg-red-500"
+              : "border-white/40 bg-black/40"
+          }`}>
+            {selected && (
+              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Add button for unowned cards */}
-      {!isOwned && onAdd && (
+      {!selecting && !isOwned && onAdd && (
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity">
           <button
             onClick={handleAdd}
@@ -391,7 +421,7 @@ function LazyCard({ card, game, owned, onAdd, onClick, directImage }: {
       )}
 
       {/* Card name label */}
-      {isOwned && (
+      {isOwned && !selecting && (
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-1.5">
           <p className="text-[9px] text-white font-medium truncate">{card.name}</p>
         </div>
@@ -416,6 +446,9 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
   const [loadingCards, setLoadingCards] = useState(false);
   const [lightboxCard, setLightboxCard] = useState<SetCard | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("default");
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const isAllView = selectedSetId === ALL_OWNED;
 
@@ -479,6 +512,8 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
   useEffect(() => {
     setLocallyAdded(new Set());
     setLocallyRemoved(new Set());
+    setSelecting(false);
+    setSelected(new Set());
   }, [selectedSetId]);
 
   // Fetch sets list
@@ -588,6 +623,42 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     onCardAdded?.(); // refresh parent data
   }, [onCardAdded]);
 
+  const toggleSelect = useCallback((cardId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) next.delete(cardId);
+      else next.add(cardId);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelected(new Set(sortedCards.map((c) => c.id)));
+  }, [sortedCards]);
+
+  const bulkDelete = useCallback(async () => {
+    if (selected.size === 0 || bulkDeleting) return;
+    setBulkDeleting(true);
+    try {
+      // In all-owned view, card.id IS the row UUID
+      const rowIds = Array.from(selected).map((id) => cardIdToRowId.get(id) ?? id);
+      const res = await fetch("/api/collection/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: rowIds }),
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      const data = await res.json();
+      toast.success(`${data.deleted} card${data.deleted > 1 ? "s" : ""} removed`);
+      setSelecting(false);
+      setSelected(new Set());
+      onCardAdded?.();
+    } catch {
+      toast.error("Failed to delete cards");
+    }
+    setBulkDeleting(false);
+  }, [selected, bulkDeleting, cardIdToRowId, onCardAdded]);
+
   if (loadingSets) {
     return (
       <div className="p-4 space-y-3">
@@ -631,6 +702,21 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
             <span className="text-xs text-zinc-400">
               {isAllView ? `${displayCards.length} cards` : `${ownedCount} / ${displayCards.length} cards`}
             </span>
+            {isAllView && displayCards.length > 0 && (
+              <button
+                onClick={() => { setSelecting((s) => !s); setSelected(new Set()); }}
+                className={`flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md border transition-colors ${
+                  selecting
+                    ? "border-red-500/40 bg-red-500/10 text-red-300"
+                    : "border-white/[0.08] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.15]"
+                }`}
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                {selecting ? "Cancel" : "Select"}
+              </button>
+            )}
             {!isAllView && (
               <div className="flex items-center gap-2">
                 <button
@@ -687,12 +773,48 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
                   onAdd={!cardOwned ? () => addCard(card) : undefined}
                   onClick={() => setLightboxCard(card)}
                   directImage={isAllView}
+                  selecting={selecting}
+                  selected={selected.has(card.id)}
+                  onToggleSelect={() => toggleSelect(card.id)}
                 />
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Multi-select action bar */}
+      {selecting && (
+        <div className="sticky bottom-0 inset-x-0 z-40 px-4 py-3 bg-zinc-900/95 backdrop-blur-sm border-t border-white/[0.08]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-300">
+                {selected.size} selected
+              </span>
+              <button
+                onClick={selected.size === sortedCards.length ? () => setSelected(new Set()) : selectAll}
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                {selected.size === sortedCards.length ? "Deselect all" : "Select all"}
+              </button>
+            </div>
+            <button
+              onClick={bulkDelete}
+              disabled={selected.size === 0 || bulkDeleting}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white transition-all"
+            >
+              {bulkDeleting ? (
+                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              )}
+              Delete{selected.size > 0 ? ` (${selected.size})` : ""}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen lightbox */}
       {lightboxCard && (
