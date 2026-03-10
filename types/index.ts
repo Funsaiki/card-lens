@@ -91,3 +91,64 @@ export interface CollectionItem {
   notes: string | null;
   addedAt: string;
 }
+
+// ---------- Portfolio / Stats ----------
+
+export interface PortfolioSummary {
+  totalValueUsd: number;
+  totalCards: number;
+  totalUnique: number;
+  byGame: GameValue[];
+  topCards: TopCard[];
+}
+
+export interface GameValue {
+  game: CardGame;
+  value: number;
+  cardCount: number;
+  uniqueCards: number;
+}
+
+export interface TopCard {
+  cardId: string;
+  name: string;
+  imageUrl: string;
+  game: CardGame;
+  unitPrice: number;
+  quantity: number;
+  totalValue: number;
+}
+
+export interface PortfolioSnapshot {
+  date: string;
+  value: number;
+  cardCount: number;
+}
+
+export interface PortfolioHistory {
+  snapshots: PortfolioSnapshot[];
+  change: { absolute: number; percentage: number; period: string };
+}
+
+export interface CollectionStats {
+  rarityBreakdown: { rarity: string; count: number; value: number }[];
+  priceDistribution: { range: string; count: number }[];
+  gameComposition: { game: CardGame; count: number; value: number; percentage: number }[];
+  setComposition: { game: CardGame; set: string; count: number; value: number }[];
+  bestGains: CardGainLoss[];
+  worstLosses: CardGainLoss[];
+  avgCardValue: number;
+  medianCardValue: number;
+  conditionBreakdown: { condition: CardCondition; count: number }[];
+}
+
+export interface CardGainLoss {
+  cardId: string;
+  name: string;
+  imageUrl: string;
+  game: CardGame;
+  addedPrice: number;
+  currentPrice: number;
+  changeAbsolute: number;
+  changePct: number;
+}

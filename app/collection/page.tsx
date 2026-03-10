@@ -3,10 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
-import { CardGame, CollectionItem, CardCondition, GAME_LABELS } from "@/types";
+import { CardGame, CollectionItem, CardCondition, GAME_LABELS, PortfolioSummary, PortfolioHistory, CollectionStats } from "@/types";
 import NavBar from "@/components/NavBar";
 import AuthModal from "@/components/AuthModal";
 import SetCollectionView from "@/components/SetCollectionView";
+import PortfolioValueCard from "@/components/PortfolioValueCard";
+import PortfolioChart from "@/components/PortfolioChart";
+import StatsPanel from "@/components/StatsPanel";
 
 const GAMES: { id: CardGame; color: string; gradient: string; icon: React.ReactNode }[] = [
   {
@@ -98,6 +101,10 @@ export default function CollectionPage() {
   const [activeGame, setActiveGame] = useState<CardGame | null>(null);
   const [initialSetId, setInitialSetId] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
+  const [history, setHistory] = useState<PortfolioHistory | null>(null);
+  const [stats, setStats] = useState<CollectionStats | null>(null);
+  const [dashTab, setDashTab] = useState<"overview" | "stats">("overview");
 
   const openGame = useCallback((game: CardGame, setId?: string | null) => {
     setInitialSetId(setId ?? null);
@@ -112,6 +119,11 @@ export default function CollectionPage() {
       setItems((data.items as RawCollectionItem[]).map(mapItem));
     }
     setLoading(false);
+    // Fetch portfolio data in background
+    fetch("/api/portfolio").then((r) => r.ok ? r.json() : null).then((d) => d && setPortfolio(d));
+    fetch("/api/portfolio/history?days=30").then((r) => r.ok ? r.json() : null).then((d) => d && setHistory(d));
+    // Also trigger a snapshot for today (idempotent via upsert)
+    fetch("/api/portfolio/snapshot", { method: "POST" }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -199,95 +211,193 @@ export default function CollectionPage() {
           </div>
         ) : (
           <>
-            {/* Total stats */}
-            {totalCards > 0 && (
+            {/* Portfolio value card */}
+            {totalCards > 0 && portfolio && (
+              <div className="pt-4 mb-4">
+                <PortfolioValueCard portfolio={portfolio} />
+              </div>
+            )}
+
+            {/* Fallback if no portfolio data yet */}
+            {totalCards > 0 && !portfolio && (
               <div className="text-center mb-6 pt-4">
                 <p className="text-3xl font-bold text-white">{totalCards}</p>
                 <p className="text-xs text-[var(--muted)]">unique cards collected</p>
               </div>
             )}
 
-            {/* Game cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {gameStats.map((game) => (
+            {/* Portfolio chart */}
+            {totalCards > 0 && history && (
+              <div className="mb-4">
+                <PortfolioChart
+                  history={history}
+                  onRangeChange={(days) => {
+                    fetch(`/api/portfolio/history?days=${days}`)
+                      .then((r) => r.ok ? r.json() : null)
+                      .then((d) => d && setHistory(d));
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Tab bar: Overview / Statistics */}
+            {totalCards > 0 && (
+              <div className="flex gap-1 mb-4 border-b border-white/[0.06]">
                 <button
-                  key={game.id}
-                  onClick={() => openGame(game.id)}
-                  className="group relative flex items-center gap-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.1] transition-all text-left"
+                  onClick={() => setDashTab("overview")}
+                  className={`px-4 py-2 text-xs font-medium transition-colors border-b-2 ${
+                    dashTab === "overview"
+                      ? "border-indigo-500 text-white"
+                      : "border-transparent text-zinc-500 hover:text-zinc-300"
+                  }`}
                 >
-                  {/* Gradient glow */}
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-br ${game.gradient} opacity-0 group-hover:opacity-[0.06] rounded-xl transition-opacity`}
-                  />
-
-                  {/* Icon */}
-                  <div className="relative flex-shrink-0 text-white/80 group-hover:text-white transition-colors">
-                    {game.icon}
-                  </div>
-
-                  {/* Info */}
-                  <div className="relative flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-zinc-200 group-hover:text-white transition-colors">
-                      {GAME_LABELS[game.id]}
-                    </p>
-                    {game.unique > 0 ? (
-                      <p className="text-xs text-[var(--muted)] mt-0.5">
-                        {game.unique} card{game.unique !== 1 ? "s" : ""}
-                        {game.sets > 0 && <span> &middot; {game.sets} set{game.sets !== 1 ? "s" : ""}</span>}
-                        {game.total !== game.unique && <span> &middot; {game.total} total</span>}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-[var(--muted)] mt-0.5">No cards yet</p>
-                    )}
-                  </div>
-
-                  {/* Count badge + arrow */}
-                  <div className="relative flex items-center gap-2">
-                    {game.unique > 0 && (
-                      <span className={`text-lg font-bold bg-gradient-to-r ${game.color} bg-clip-text text-transparent`}>
-                        {game.unique}
-                      </span>
-                    )}
-                    <svg
-                      className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 group-hover:translate-x-0.5 transition-all flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
+                  Overview
                 </button>
-              ))}
-            </div>
+                <button
+                  onClick={() => {
+                    setDashTab("stats");
+                    if (!stats) {
+                      fetch("/api/portfolio/stats")
+                        .then((r) => r.ok ? r.json() : null)
+                        .then((d) => d && !d.empty && setStats(d));
+                    }
+                  }}
+                  className={`px-4 py-2 text-xs font-medium transition-colors border-b-2 ${
+                    dashTab === "stats"
+                      ? "border-indigo-500 text-white"
+                      : "border-transparent text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  Statistics
+                </button>
+              </div>
+            )}
 
-            {/* Recent additions */}
-            {items.length > 0 && (
-              <div className="mt-6">
-                <p className="text-xs text-[var(--muted)] uppercase tracking-wider mb-3">Recently added</p>
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {items.slice(0, 8).map((item) => (
+            {/* Statistics tab */}
+            {dashTab === "stats" && stats && (
+              <div className="mb-6">
+                <StatsPanel stats={stats} />
+              </div>
+            )}
+            {dashTab === "stats" && !stats && totalCards > 0 && (
+              <div className="flex justify-center py-8">
+                <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+
+            {/* Overview tab content */}
+            {dashTab === "overview" && (
+              <>
+                {/* Game cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {gameStats.map((game) => (
                     <button
-                      key={item.id}
-                      onClick={() => openGame(item.game, item.cardSet)}
-                      className="flex-shrink-0 w-20 group"
+                      key={game.id}
+                      onClick={() => openGame(game.id)}
+                      className="group relative flex items-center gap-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.1] transition-all text-left"
                     >
-                      <div className="aspect-[2.5/3.5] rounded-lg overflow-hidden bg-zinc-800/50 border border-white/[0.06] group-hover:border-white/[0.15] transition-all">
-                        {item.cardImageUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.cardImageUrl}
-                            alt={item.cardName}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-br ${game.gradient} opacity-0 group-hover:opacity-[0.06] rounded-xl transition-opacity`}
+                      />
+                      <div className="relative flex-shrink-0 text-white/80 group-hover:text-white transition-colors">
+                        {game.icon}
+                      </div>
+                      <div className="relative flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-zinc-200 group-hover:text-white transition-colors">
+                          {GAME_LABELS[game.id]}
+                        </p>
+                        {game.unique > 0 ? (
+                          <p className="text-xs text-[var(--muted)] mt-0.5">
+                            {game.unique} card{game.unique !== 1 ? "s" : ""}
+                            {game.sets > 0 && <span> &middot; {game.sets} set{game.sets !== 1 ? "s" : ""}</span>}
+                            {game.total !== game.unique && <span> &middot; {game.total} total</span>}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-[var(--muted)] mt-0.5">No cards yet</p>
                         )}
                       </div>
-                      <p className="text-[9px] text-zinc-400 truncate mt-1 text-center">{item.cardName}</p>
+                      <div className="relative flex items-center gap-2">
+                        {game.unique > 0 && (
+                          <span className={`text-lg font-bold bg-gradient-to-r ${game.color} bg-clip-text text-transparent`}>
+                            {game.unique}
+                          </span>
+                        )}
+                        <svg
+                          className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 group-hover:translate-x-0.5 transition-all flex-shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
                     </button>
                   ))}
                 </div>
-              </div>
+
+                {/* Most valuable cards */}
+                {portfolio && portfolio.topCards.length > 0 && (
+                  <div className="mt-6">
+                    <p className="text-xs text-[var(--muted)] uppercase tracking-wider mb-3">Most Valuable</p>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {portfolio.topCards.slice(0, 8).map((card) => (
+                        <button
+                          key={card.cardId}
+                          onClick={() => openGame(card.game)}
+                          className="flex-shrink-0 w-20 group"
+                        >
+                          <div className="relative aspect-[2.5/3.5] rounded-lg overflow-hidden bg-zinc-800/50 border border-white/[0.06] group-hover:border-white/[0.15] transition-all">
+                            {card.imageUrl && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={card.imageUrl}
+                                alt={card.name}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-1 pb-0.5 pt-3">
+                              <p className="text-[9px] text-green-400 font-medium text-center">
+                                ${card.unitPrice.toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-[9px] text-zinc-400 truncate mt-1 text-center">{card.name}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent additions */}
+                {items.length > 0 && (
+                  <div className="mt-6">
+                    <p className="text-xs text-[var(--muted)] uppercase tracking-wider mb-3">Recently added</p>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {items.slice(0, 8).map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => openGame(item.game, item.cardSet)}
+                          className="flex-shrink-0 w-20 group"
+                        >
+                          <div className="aspect-[2.5/3.5] rounded-lg overflow-hidden bg-zinc-800/50 border border-white/[0.06] group-hover:border-white/[0.15] transition-all">
+                            {item.cardImageUrl && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={item.cardImageUrl}
+                                alt={item.cardName}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                          </div>
+                          <p className="text-[9px] text-zinc-400 truncate mt-1 text-center">{item.cardName}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Empty state */}
