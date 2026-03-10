@@ -518,19 +518,33 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     return () => { cancelled = true; };
   }, [selectedSetId, game]);
 
+  // Check ownership by id OR localId (backwards compat: old cards stored cardno as cardId)
+  const isOwned = useCallback(
+    (card: SetCard) => ownedCardIds.has(card.id) || ownedCardIds.has(card.localId),
+    [ownedCardIds]
+  );
+  const getRowId = useCallback(
+    (card: SetCard) => cardIdToRowId.get(card.id) ?? cardIdToRowId.get(card.localId),
+    [cardIdToRowId]
+  );
+  const getItem = useCallback(
+    (card: SetCard) => cardIdToItem.get(card.id) ?? cardIdToItem.get(card.localId),
+    [cardIdToItem]
+  );
+
   const selectedSet = sets.find((s) => s.id === selectedSetId);
   const displayCards = isAllView ? allOwnedSetCards : setCards;
-  const ownedCount = displayCards.filter((c) => ownedCardIds.has(c.id)).length;
+  const ownedCount = displayCards.filter((c) => isOwned(c)).length;
   const pct = displayCards.length > 0 ? Math.round((ownedCount / displayCards.length) * 100) : 0;
 
   const sortedCards = useMemo(() => {
     if (sortMode === "default") return displayCards;
     return [...displayCards].sort((a, b) => {
-      const aOwned = ownedCardIds.has(a.id) ? 1 : 0;
-      const bOwned = ownedCardIds.has(b.id) ? 1 : 0;
+      const aOwned = isOwned(a) ? 1 : 0;
+      const bOwned = isOwned(b) ? 1 : 0;
       return sortMode === "owned" ? bOwned - aOwned : aOwned - bOwned;
     });
-  }, [displayCards, sortMode, ownedCardIds]);
+  }, [displayCards, sortMode, isOwned]);
 
   const addCard = useCallback(async (card: SetCard, cardVariant?: CardVariant) => {
     const setName = selectedSet?.name ?? selectedSetId ?? "";
@@ -556,13 +570,13 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
   }, [game, selectedSet?.name, selectedSetId, onCardAdded]);
 
   const removeCard = useCallback(async (card: SetCard) => {
-    const rowId = cardIdToRowId.get(card.id);
+    const rowId = getRowId(card);
     if (!rowId) return;
     const res = await fetch(`/api/collection/${rowId}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to remove");
     setLocallyRemoved((prev) => new Set(prev).add(card.id));
     onCardAdded?.(); // refresh parent data
-  }, [cardIdToRowId, onCardAdded]);
+  }, [getRowId, onCardAdded]);
 
   const updateCard = useCallback(async (rowId: string, updates: { condition?: CardCondition; quantity?: number; variant?: CardVariant }) => {
     const res = await fetch(`/api/collection/${rowId}`, {
@@ -663,14 +677,14 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
             {sortedCards.map((card) => {
-              const isOwned = ownedCardIds.has(card.id);
+              const cardOwned = isOwned(card);
               return (
                 <LazyCard
                   key={card.id}
                   card={card}
                   game={game}
-                  owned={isOwned}
-                  onAdd={!isOwned ? () => addCard(card) : undefined}
+                  owned={cardOwned}
+                  onAdd={!cardOwned ? () => addCard(card) : undefined}
                   onClick={() => setLightboxCard(card)}
                   directImage={isAllView}
                 />
@@ -685,10 +699,10 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
         <CardLightbox
           card={lightboxCard}
           game={game}
-          owned={ownedCardIds.has(lightboxCard.id)}
-          collectionItem={cardIdToItem.get(lightboxCard.id)}
-          onAdd={!ownedCardIds.has(lightboxCard.id) ? (v) => addCard(lightboxCard, v) : undefined}
-          onRemove={ownedCardIds.has(lightboxCard.id) && cardIdToRowId.has(lightboxCard.id) ? () => removeCard(lightboxCard) : undefined}
+          owned={isOwned(lightboxCard)}
+          collectionItem={getItem(lightboxCard)}
+          onAdd={!isOwned(lightboxCard) ? (v) => addCard(lightboxCard, v) : undefined}
+          onRemove={isOwned(lightboxCard) && getRowId(lightboxCard) ? () => removeCard(lightboxCard) : undefined}
           onUpdate={updateCard}
           onClose={() => setLightboxCard(null)}
           directImage={isAllView}
