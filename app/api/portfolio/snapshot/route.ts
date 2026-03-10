@@ -56,11 +56,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Upsert snapshot rows (total + per-game)
+  // Use '_total' instead of NULL for the aggregate row — PostgreSQL treats
+  // NULLs as distinct in UNIQUE constraints, so game=NULL never upserts
+  // and creates duplicate rows on every page load.
   const rows = [
     {
       user_id: user.id,
       snapshot_date: today,
-      game: null as string | null,
+      game: "_total",
       total_value_usd: Math.round(totalValue * 100) / 100,
       card_count: totalCards,
       unique_cards: totalUnique,
@@ -68,7 +71,7 @@ export async function POST(request: NextRequest) {
     ...Array.from(gameMap.entries()).map(([game, gv]) => ({
       user_id: user.id,
       snapshot_date: today,
-      game: game as string | null,
+      game: game as string,
       total_value_usd: Math.round(gv.value * 100) / 100,
       card_count: gv.cardCount,
       unique_cards: gv.uniqueCards,

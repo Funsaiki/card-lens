@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
   if (game) {
     query = query.eq("game", game);
   } else {
-    query = query.is("game", null);
+    // '_total' is the sentinel for the aggregate row (not NULL — see snapshot route)
+    query = query.eq("game", "_total");
   }
 
   const { data, error } = await query;
