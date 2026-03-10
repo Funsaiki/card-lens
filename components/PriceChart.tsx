@@ -7,7 +7,7 @@ interface PriceChartProps {
   pricing: CardPricing;
 }
 
-type ExpandedSection = "tcgplayer" | "cardmarket" | "history" | null;
+type ExpandedSection = "tcgplayer" | "cardmarket" | null;
 
 function formatPrice(value: number | undefined, currency: string): string {
   if (value == null) return "N/A";
@@ -148,7 +148,6 @@ function PriceHistoryChart({ history }: { history: PriceHistoryPoint[] }) {
         </defs>
         <path d={fillD} fill="url(#grad-history)" />
         <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {/* First and last point dots */}
         <circle cx={coords[0].x} cy={coords[0].y} r="3" fill={color} />
         <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="3.5" fill={color} stroke="white" strokeWidth="1" />
       </svg>
@@ -158,7 +157,6 @@ function PriceHistoryChart({ history }: { history: PriceHistoryPoint[] }) {
         <span className="text-zinc-300 font-medium">Now: ${current.toFixed(2)}</span>
       </div>
 
-      {/* Inventory price if available */}
       {history[history.length - 1]?.inventory != null && (
         <div className="flex justify-between text-[10px]">
           <span className="text-zinc-500">Lowest listing</span>
@@ -169,9 +167,9 @@ function PriceHistoryChart({ history }: { history: PriceHistoryPoint[] }) {
   );
 }
 
-// ---------- TCGPlayer price range chart ----------
+// ---------- TCGPlayer price range bar ----------
 
-function TCGPlayerChart({ data, label }: { data: TCGPlayerPrice; label: string }) {
+function TCGPlayerRangeBar({ data, label }: { data: TCGPlayerPrice; label: string }) {
   const low = data.low ?? 0;
   const high = data.high ?? 0;
   const mid = data.mid;
@@ -218,34 +216,46 @@ function TCGPlayerChart({ data, label }: { data: TCGPlayerPrice; label: string }
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
+      <PriceGrid data={data} />
+    </div>
+  );
+}
+
+// ---------- Unified price grid (used by all TCGPlayer sections) ----------
+
+function PriceGrid({ data }: { data: TCGPlayerPrice }) {
+  return (
+    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
+      {data.low != null && (
         <div className="flex justify-between">
           <span className="text-zinc-500">Low</span>
-          <span className="text-zinc-300">${low.toFixed(2)}</span>
+          <span className="text-zinc-300">${data.low.toFixed(2)}</span>
         </div>
-        {mid != null && (
-          <div className="flex justify-between">
-            <span className="text-zinc-500">Mid</span>
-            <span className="text-zinc-300">${mid.toFixed(2)}</span>
-          </div>
-        )}
-        {market != null && (
-          <div className="flex justify-between">
-            <span className="text-green-400">Market</span>
-            <span className="text-green-300">${market.toFixed(2)}</span>
-          </div>
-        )}
+      )}
+      {data.mid != null && (
+        <div className="flex justify-between">
+          <span className="text-zinc-500">Mid</span>
+          <span className="text-zinc-300">${data.mid.toFixed(2)}</span>
+        </div>
+      )}
+      {data.market != null && (
+        <div className="flex justify-between">
+          <span className="text-green-400">Market</span>
+          <span className="text-green-300">${data.market.toFixed(2)}</span>
+        </div>
+      )}
+      {data.high != null && (
         <div className="flex justify-between">
           <span className="text-zinc-500">High</span>
-          <span className="text-zinc-300">${high.toFixed(2)}</span>
+          <span className="text-zinc-300">${data.high.toFixed(2)}</span>
         </div>
-        {directLow != null && (
-          <div className="flex justify-between">
-            <span className="text-zinc-500">Direct</span>
-            <span className="text-zinc-300">${directLow.toFixed(2)}</span>
-          </div>
-        )}
-      </div>
+      )}
+      {data.directLow != null && (
+        <div className="flex justify-between">
+          <span className="text-zinc-500">Direct</span>
+          <span className="text-zinc-300">${data.directLow.toFixed(2)}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -259,8 +269,9 @@ export default function PriceChart({ pricing }: PriceChartProps) {
   const hasCardmarket = !!(pricing.cardmarket || pricing.cardmarketHolo);
   const hasHistory = !!(pricing.priceHistory && pricing.priceHistory.length > 1);
 
-  // For One Piece: show history as the main expandable instead of TCGPlayer range chart
-  const showTCGPlayerRange = hasTCGPlayer && (pricing.tcgplayer?.high != null || pricing.tcgplayerHolo?.high != null);
+  const hasRange = hasTCGPlayer && (pricing.tcgplayer?.high != null || pricing.tcgplayerHolo?.high != null);
+  const hasDetails = hasRange || hasHistory || (pricing.tcgplayer?.low != null);
+  const tcgMarket = pricing.tcgplayer?.market ?? pricing.tcgplayerHolo?.market;
 
   return (
     <div className="space-y-2">
@@ -271,7 +282,7 @@ export default function PriceChart({ pricing }: PriceChartProps) {
         </p>
       )}
 
-      {/* TCGPlayer — with range chart (Pokemon) or simple price (One Piece without history) */}
+      {/* TCGPlayer */}
       {hasTCGPlayer && (
         <div
           className={`bg-zinc-800 rounded-lg overflow-hidden transition-all ${
@@ -288,9 +299,9 @@ export default function PriceChart({ pricing }: PriceChartProps) {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-green-400">
-                ${(pricing.tcgplayer?.market ?? pricing.tcgplayerHolo?.market)?.toFixed(2) ?? "N/A"}
+                {tcgMarket != null ? `$${tcgMarket.toFixed(2)}` : "N/A"}
               </span>
-              {(showTCGPlayerRange || hasHistory) && (
+              {hasDetails && (
                 <svg
                   className={`w-3 h-3 text-zinc-500 transition-transform ${expanded === "tcgplayer" ? "rotate-180" : ""}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -307,19 +318,20 @@ export default function PriceChart({ pricing }: PriceChartProps) {
               {hasHistory && (
                 <PriceHistoryChart history={pricing.priceHistory!} />
               )}
-              {/* Range charts (Pokemon) */}
-              {showTCGPlayerRange && (
+              {/* Range bar charts (when high is available) */}
+              {hasRange && (
                 <>
-                  {pricing.tcgplayer && <TCGPlayerChart data={pricing.tcgplayer} label="Normal" />}
-                  {pricing.tcgplayerHolo && <TCGPlayerChart data={pricing.tcgplayerHolo} label="Reverse Holo" />}
+                  {pricing.tcgplayer && pricing.tcgplayer.high != null && (
+                    <TCGPlayerRangeBar data={pricing.tcgplayer} label={pricing.tcgplayerHolo ? "Normal" : "Price Range"} />
+                  )}
+                  {pricing.tcgplayerHolo && pricing.tcgplayerHolo.high != null && (
+                    <TCGPlayerRangeBar data={pricing.tcgplayerHolo} label="Reverse Holo" />
+                  )}
                 </>
               )}
-              {/* Simple low/market for One Piece without history */}
-              {!hasHistory && !showTCGPlayerRange && pricing.tcgplayer?.low != null && (
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-zinc-500">Lowest listing</span>
-                  <span className="text-zinc-300">${pricing.tcgplayer.low.toFixed(2)}</span>
-                </div>
+              {/* Price grid without range bar (when we have low/mid but no high) */}
+              {!hasRange && !hasHistory && pricing.tcgplayer && (
+                <PriceGrid data={pricing.tcgplayer} />
               )}
             </div>
           )}
