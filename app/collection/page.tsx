@@ -105,6 +105,7 @@ export default function CollectionPage() {
   const [history, setHistory] = useState<PortfolioHistory | null>(null);
   const [stats, setStats] = useState<CollectionStats | null>(null);
   const [dashTab, setDashTab] = useState<"overview" | "stats">("overview");
+  const [refreshing, setRefreshing] = useState(false);
 
   const openGame = useCallback((game: CardGame, setId?: string | null) => {
     setInitialSetId(setId ?? null);
@@ -215,6 +216,32 @@ export default function CollectionPage() {
             {totalCards > 0 && portfolio && (
               <div className="pt-4 mb-4">
                 <PortfolioValueCard portfolio={portfolio} />
+                {/* Refresh prices button */}
+                <div className="flex justify-center mt-2">
+                  <button
+                    onClick={async () => {
+                      setRefreshing(true);
+                      try {
+                        const res = await fetch("/api/collection/refresh-prices", { method: "POST" });
+                        if (res.ok) {
+                          // Re-fetch everything after refresh
+                          await fetchCollection();
+                        }
+                      } catch {}
+                      setRefreshing(false);
+                    }}
+                    disabled={refreshing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-zinc-400 hover:text-zinc-200 bg-zinc-800/50 hover:bg-zinc-800 border border-white/[0.06] rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <svg
+                      className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {refreshing ? "Updating prices..." : "Refresh prices"}
+                  </button>
+                </div>
               </div>
             )}
 
