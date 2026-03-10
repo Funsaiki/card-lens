@@ -60,6 +60,13 @@ export interface SessionCard {
 
 // ---------- Collection ----------
 
+export type CardVariant = "normal" | "reverse_holo";
+
+export const VARIANT_LABELS: Record<CardVariant, string> = {
+  normal: "Normal",
+  reverse_holo: "Reverse Holo",
+};
+
 export type CardCondition =
   | "mint"
   | "near_mint"
@@ -88,6 +95,7 @@ export interface CollectionItem {
   cardData: CardData;
   quantity: number;
   condition: CardCondition;
+  variant: CardVariant;
   notes: string | null;
   addedAt: string;
 }

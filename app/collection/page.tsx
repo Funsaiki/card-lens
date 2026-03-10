@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
-import { CardGame, CollectionItem, CardCondition, GAME_LABELS, PortfolioSummary, PortfolioHistory, CollectionStats } from "@/types";
+import { CardGame, CollectionItem, CardCondition, CardVariant, GAME_LABELS, PortfolioSummary, PortfolioHistory, CollectionStats } from "@/types";
 import NavBar from "@/components/NavBar";
 import AuthModal from "@/components/AuthModal";
 import SetCollectionView from "@/components/SetCollectionView";
@@ -75,6 +75,7 @@ interface RawCollectionItem {
   card_data: CollectionItem["cardData"];
   quantity: number;
   condition: CardCondition;
+  variant: CardVariant | null;
   notes: string | null;
   added_at: string;
 }
@@ -91,6 +92,7 @@ function mapItem(raw: RawCollectionItem): CollectionItem {
     cardData: raw.card_data,
     quantity: raw.quantity,
     condition: raw.condition,
+    variant: raw.variant ?? "normal",
     notes: raw.notes,
     addedAt: raw.added_at,
   };
@@ -238,10 +240,10 @@ export default function CollectionPage() {
                       setRefreshing(false);
                     }}
                     disabled={refreshing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-zinc-400 hover:text-zinc-200 bg-zinc-800/50 hover:bg-zinc-800 border border-white/[0.06] rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/30 rounded-lg transition-colors disabled:opacity-50"
                   >
                     <svg
-                      className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
+                      className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
                       fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

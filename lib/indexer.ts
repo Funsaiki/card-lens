@@ -136,13 +136,22 @@ async function fetchHololiveSets(): Promise<GameSet[]> {
 
 async function fetchHololiveSetCards(setId: string): Promise<SetCard[]> {
   const cards = await loadHololiveData();
-  const seen = new Set<string>();
   const result: SetCard[] = [];
-  for (const c of cards) {
-    if (c.products.includes(setId) && !seen.has(c.cardno)) {
-      seen.add(c.cardno);
-      result.push({ id: c.cardno, localId: c.cardno, name: c.name, image: c.img });
-    }
+  // Count duplicates per cardno to detect alternate-art variants
+  const countByCardno = new Map<string, number>();
+  const setCards = cards.filter((c) => c.products.includes(setId));
+  for (const c of setCards) {
+    countByCardno.set(c.cardno, (countByCardno.get(c.cardno) ?? 0) + 1);
+  }
+  const seenCardno = new Map<string, number>();
+  for (const c of setCards) {
+    const count = countByCardno.get(c.cardno) ?? 1;
+    const seenCount = seenCardno.get(c.cardno) ?? 0;
+    seenCardno.set(c.cardno, seenCount + 1);
+    // Use numeric id to make each entry unique
+    const uniqueId = String(c.id);
+    const label = count > 1 ? `${c.name} (${c.rarity})` : c.name;
+    result.push({ id: uniqueId, localId: c.cardno, name: label, image: c.img });
   }
   return result;
 }
