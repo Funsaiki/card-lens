@@ -420,9 +420,10 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
   const isAllView = selectedSetId === ALL_OWNED;
 
   // Convert owned cards to SetCard[] for the "all" view
+  // Use Supabase row id as SetCard.id to guarantee uniqueness (same cardId may appear with different variants)
   const allOwnedSetCards = useMemo<SetCard[]>(
     () => ownedCards.map((c) => ({
-      id: c.cardId,
+      id: c.id,
       localId: c.cardId,
       name: c.cardName,
       image: c.cardImageUrl ?? undefined,
@@ -435,7 +436,11 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
   const [locallyRemoved, setLocallyRemoved] = useState<Set<string>>(new Set());
   const ownedCardIds = useMemo(
     () => {
-      const ids = new Set(ownedCards.map((c) => c.cardId));
+      const ids = new Set<string>();
+      for (const c of ownedCards) {
+        ids.add(c.cardId);   // for set view (match by card ID)
+        ids.add(c.id);       // for "all owned" view (match by row UUID)
+      }
       for (const id of locallyAdded) ids.add(id);
       for (const id of locallyRemoved) ids.delete(id);
       return ids;
@@ -443,15 +448,30 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     [ownedCards, locallyAdded, locallyRemoved]
   );
 
-  // Map cardId → Supabase row ID for delete
+  // Map card identifier → Supabase row ID for delete
+  // Keyed by both cardId (set view) and row id (all-owned view)
   const cardIdToRowId = useMemo(
-    () => new Map(ownedCards.map((c) => [c.cardId, c.id])),
+    () => {
+      const m = new Map<string, string>();
+      for (const c of ownedCards) {
+        m.set(c.cardId, c.id);
+        m.set(c.id, c.id);
+      }
+      return m;
+    },
     [ownedCards]
   );
 
-  // Map cardId → full CollectionItem for lightbox editing
+  // Map card identifier → full CollectionItem for lightbox editing
   const cardIdToItem = useMemo(
-    () => new Map(ownedCards.map((c) => [c.cardId, c])),
+    () => {
+      const m = new Map<string, CollectionItem>();
+      for (const c of ownedCards) {
+        m.set(c.cardId, c);
+        m.set(c.id, c);
+      }
+      return m;
+    },
     [ownedCards]
   );
 
