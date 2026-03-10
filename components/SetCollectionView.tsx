@@ -545,7 +545,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
           set: setName,
           rarity: "",
           imageUrl: getHighResImageUrl(card, game),
-          details: {},
+          details: { cardNo: card.localId },
         },
         ...(cardVariant ? { variant: cardVariant } : {}),
       }),
