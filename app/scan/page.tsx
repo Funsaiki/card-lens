@@ -43,6 +43,58 @@ function ScanContent() {
   const [frameHeightPercent, setFrameHeightPercent] = useState(0.75);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const sheetScrollRef = useRef<HTMLDivElement>(null);
+
+  // Swipe-down-to-close on mobile bottom sheet
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet || !mobilePanelOpen) return;
+
+    let dragging = false;
+    let startY = 0;
+    let delta = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+      delta = 0;
+      dragging = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      delta = e.touches[0].clientY - startY;
+      const scrollEl = sheetScrollRef.current;
+      const isAtTop = !scrollEl || scrollEl.scrollTop <= 0;
+
+      if (delta > 0 && isAtTop) {
+        e.preventDefault();
+        dragging = true;
+        sheet.style.transform = `translateY(${delta}px)`;
+        sheet.style.transition = "none";
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (dragging) {
+        sheet.style.transition = "";
+        if (delta > 80) {
+          setMobilePanelOpen(false);
+        } else {
+          sheet.style.transform = "translateY(0)";
+        }
+      }
+    };
+
+    sheet.addEventListener("touchstart", onTouchStart, { passive: true });
+    sheet.addEventListener("touchmove", onTouchMove, { passive: false });
+    sheet.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      sheet.removeEventListener("touchstart", onTouchStart);
+      sheet.removeEventListener("touchmove", onTouchMove);
+      sheet.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [mobilePanelOpen]);
   const localStreamRef = useRef<MediaStream | null>(null);
 
   const {
@@ -437,6 +489,7 @@ function ScanContent() {
 
         {/* Mobile bottom sheet — hidden on desktop */}
         <div
+          ref={sheetRef}
           className="lg:hidden fixed inset-x-0 bottom-0 z-30 flex flex-col transition-transform duration-300 ease-out"
           style={{ transform: mobilePanelOpen ? "translateY(0)" : "translateY(calc(100% - 2.75rem))" }}
         >
@@ -476,7 +529,7 @@ function ScanContent() {
           </div>
 
           {/* Panel content */}
-          <div className="h-[60vh] bg-zinc-900 overflow-y-auto">{panelContent}</div>
+          <div ref={sheetScrollRef} className="h-[60vh] bg-zinc-900 overflow-y-auto" style={{ overscrollBehavior: "contain" }}>{panelContent}</div>
         </div>
       </div>
 
