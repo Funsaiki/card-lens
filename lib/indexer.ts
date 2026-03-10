@@ -72,13 +72,14 @@ async function fetchOnePieceSetCards(setId: string): Promise<SetCard[]> {
   const res = await fetch(`${OPTCG_BASE}/${type}/${setId}/`);
   if (!res.ok) return [];
 
-  const data: { card_name: string; card_set_id: string; card_image: string }[] = await res.json();
-  // Deduplicate (parallels have _p1 suffix)
+  const data: { card_name: string; card_set_id: string; card_image: string; card_image_id?: string }[] = await res.json();
+  // Use card_image_id as unique key (parallels/box toppers get _p1 suffix)
   const seen = new Set<string>();
   return data.reduce<SetCard[]>((acc, c) => {
-    if (!seen.has(c.card_set_id)) {
-      seen.add(c.card_set_id);
-      acc.push({ id: c.card_set_id, localId: c.card_set_id, name: c.card_name, image: c.card_image });
+    const uniqueId = c.card_image_id ?? c.card_set_id;
+    if (!seen.has(uniqueId)) {
+      seen.add(uniqueId);
+      acc.push({ id: uniqueId, localId: c.card_set_id, name: c.card_name, image: c.card_image });
     }
     return acc;
   }, []);

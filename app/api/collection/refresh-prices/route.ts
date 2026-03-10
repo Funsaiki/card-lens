@@ -76,14 +76,18 @@ export async function POST() {
   const onepieceItems = byGame.get("onepiece") ?? [];
   for (const item of onepieceItems) {
     try {
+      // Query by base card_set_id (strip _p1 suffix for API lookup)
+      const baseId = item.card_id.replace(/_p\d+$/, "");
       const res = await fetch(
-        `https://www.optcgapi.com/api/sets/card/twoweeks/${encodeURIComponent(item.card_id)}/`,
+        `https://www.optcgapi.com/api/sets/card/twoweeks/${encodeURIComponent(baseId)}/`,
         { next: { revalidate: 0 } }
       );
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data[0]) {
-          const card = parseOnePieceCardWithHistory(data[0]);
+        if (Array.isArray(data) && data.length > 0) {
+          // Match by card_image_id for the correct variant
+          const match = data.find((d: Record<string, unknown>) => d.card_image_id === item.card_id) ?? data[0];
+          const card = parseOnePieceCardWithHistory(match);
           if (card.pricing) {
             await supabase
               .from("collection_items")

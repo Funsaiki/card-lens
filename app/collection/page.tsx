@@ -118,7 +118,7 @@ export default function CollectionPage() {
 
   const fetchCollection = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/collection");
+    const res = await fetch("/api/collection?all=1");
     if (res.ok) {
       const data = await res.json();
       setItems((data.items as RawCollectionItem[]).map(mapItem));
