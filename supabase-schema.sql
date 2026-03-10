@@ -57,11 +57,12 @@ create table public.collection_items (
   card_data jsonb,
   quantity integer default 1 not null check (quantity > 0),
   condition text default 'near_mint',
+  variant text default 'normal',
   notes text,
   added_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
 
-  unique(user_id, card_id, game)
+  unique(user_id, card_id, game, variant)
 );
 
 alter table public.collection_items enable row level security;

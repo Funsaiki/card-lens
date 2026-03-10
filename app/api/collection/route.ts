@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { card, quantity = 1, condition = "near_mint" } = body;
+  const { card, quantity = 1, condition = "near_mint", variant = "normal" } = body;
 
   if (!card?.id || !card?.game || !card?.name) {
     return NextResponse.json({ error: "Missing card data" }, { status: 400 });
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
 
   const VALID_GAMES = ["pokemon", "onepiece", "riftbound", "hololive"];
   const VALID_CONDITIONS = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
+  const VALID_VARIANTS = ["normal", "reverse_holo"];
 
   if (!VALID_GAMES.includes(card.game)) {
     return NextResponse.json({ error: "Invalid game" }, { status: 400 });
@@ -70,15 +71,26 @@ export async function POST(request: NextRequest) {
   if (!VALID_CONDITIONS.includes(condition)) {
     return NextResponse.json({ error: "Invalid condition" }, { status: 400 });
   }
+  if (!VALID_VARIANTS.includes(variant)) {
+    return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
+  }
 
-  // Check if card already exists
-  const { data: existing } = await supabase
+  // Check if card already exists (same card + game + variant)
+  let existingQuery = supabase
     .from("collection_items")
     .select("id, quantity")
     .eq("user_id", user.id)
     .eq("card_id", card.id)
-    .eq("game", card.game)
-    .single();
+    .eq("game", card.game);
+
+  if (variant === "normal") {
+    // Match both null and "normal" for backwards compatibility
+    existingQuery = existingQuery.or("variant.is.null,variant.eq.normal");
+  } else {
+    existingQuery = existingQuery.eq("variant", variant);
+  }
+
+  const { data: existing } = await existingQuery.single();
 
   if (existing) {
     // Increment quantity
@@ -113,6 +125,7 @@ export async function POST(request: NextRequest) {
     card_data: card,
     quantity,
     condition,
+    variant,
   });
 
   if (error) {

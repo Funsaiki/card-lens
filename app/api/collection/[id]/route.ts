@@ -19,6 +19,7 @@ export async function PATCH(
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   const VALID_CONDITIONS = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
+  const VALID_VARIANTS = ["normal", "reverse_holo"];
 
   if (body.quantity !== undefined) {
     if (typeof body.quantity !== "number" || !Number.isInteger(body.quantity) || body.quantity < 1 || body.quantity > 9999) {
@@ -31,6 +32,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid condition" }, { status: 400 });
     }
     updates.condition = body.condition;
+  }
+  if (body.variant !== undefined) {
+    if (!VALID_VARIANTS.includes(body.variant)) {
+      return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
+    }
+    updates.variant = body.variant;
   }
   if (body.notes !== undefined) {
     if (typeof body.notes !== "string" || body.notes.length > 1000) {

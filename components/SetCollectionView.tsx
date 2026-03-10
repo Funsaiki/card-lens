@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { CardGame, CollectionItem, CardCondition, CONDITION_LABELS } from "@/types";
+import { CardGame, CollectionItem, CardCondition, CardVariant, CONDITION_LABELS, VARIANT_LABELS } from "@/types";
 import { fetchSets, fetchSetCards, getCardImageUrl, GameSet, SetCard } from "@/lib/indexer";
 import Dropdown from "@/components/Dropdown";
 import { SkeletonCardGrid, SkeletonSetStats } from "@/components/Skeleton";
@@ -22,14 +22,16 @@ type AddState = "idle" | "adding" | "added";
 
 // ---------- Fullscreen lightbox ----------
 
+const VARIANTS: CardVariant[] = ["normal", "reverse_holo"];
+
 function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUpdate, onClose, directImage }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
   collectionItem?: CollectionItem;
-  onAdd?: () => Promise<void>;
+  onAdd?: (variant?: CardVariant) => Promise<void>;
   onRemove?: () => Promise<void>;
-  onUpdate?: (rowId: string, updates: { condition?: CardCondition; quantity?: number; notes?: string }) => Promise<void>;
+  onUpdate?: (rowId: string, updates: { condition?: CardCondition; quantity?: number; variant?: CardVariant }) => Promise<void>;
   onClose: () => void;
   directImage?: boolean;
 }) {
@@ -37,13 +39,16 @@ function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUp
   const [removeState, setRemoveState] = useState<"idle" | "removing" | "removed">("idle");
   const [condition, setCondition] = useState<CardCondition>(collectionItem?.condition ?? "near_mint");
   const [quantity, setQuantity] = useState(collectionItem?.quantity ?? 1);
+  const [variant, setVariant] = useState<CardVariant>(collectionItem?.variant ?? "normal");
   const [saving, setSaving] = useState(false);
   const isOwned = (owned || addState === "added") && removeState !== "removed";
+  const showVariant = game === "pokemon";
 
   // Track if user changed anything
   const hasChanges = isOwned && collectionItem && (
     condition !== collectionItem.condition ||
-    quantity !== collectionItem.quantity
+    quantity !== collectionItem.quantity ||
+    (showVariant && variant !== collectionItem.variant)
   );
 
   useEffect(() => {
@@ -58,9 +63,9 @@ function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUp
     if (!onAdd || addState !== "idle") return;
     setAddState("adding");
     try {
-      await onAdd();
+      await onAdd(showVariant ? variant : undefined);
       setAddState("added");
-      toast.success(`${card.name} added`);
+      toast.success(`${card.name}${showVariant && variant === "reverse_holo" ? " (Reverse Holo)" : ""} added`);
     } catch {
       setAddState("idle");
       toast.error("Failed to add card");
@@ -84,7 +89,7 @@ function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUp
     if (!onUpdate || !collectionItem || saving) return;
     setSaving(true);
     try {
-      await onUpdate(collectionItem.id, { condition, quantity });
+      await onUpdate(collectionItem.id, { condition, quantity, ...(showVariant ? { variant } : {}) });
       toast.success("Changes saved");
     } catch {
       toast.error("Failed to save changes");
@@ -163,6 +168,28 @@ function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUp
                 )}
               </div>
 
+              {/* Variant selector (Pokemon only) */}
+              {showVariant && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Variant</label>
+                  <div className="grid grid-cols-2 gap-1">
+                    {VARIANTS.map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setVariant(v)}
+                        className={`px-2 py-1.5 text-[10px] rounded-md border transition-all ${
+                          variant === v
+                            ? "border-indigo-500/50 bg-indigo-500/15 text-indigo-300 font-medium"
+                            : "border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.12]"
+                        }`}
+                      >
+                        {VARIANT_LABELS[v]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Condition selector */}
               <div className="space-y-1.5">
                 <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Condition</label>
@@ -227,11 +254,33 @@ function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUp
               )}
             </>
           ) : onAdd ? (
-            <button
-              onClick={handleAdd}
-              disabled={addState === "adding"}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white transition-all"
-            >
+            <div className="space-y-3">
+              {/* Variant selector before adding (Pokemon only) */}
+              {showVariant && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Variant</label>
+                  <div className="grid grid-cols-2 gap-1">
+                    {VARIANTS.map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setVariant(v)}
+                        className={`px-2 py-1.5 text-[10px] rounded-md border transition-all ${
+                          variant === v
+                            ? "border-indigo-500/50 bg-indigo-500/15 text-indigo-300 font-medium"
+                            : "border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.12]"
+                        }`}
+                      >
+                        {VARIANT_LABELS[v]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={handleAdd}
+                disabled={addState === "adding"}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white transition-all"
+              >
               {addState === "adding" ? (
                 <>
                   <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -246,6 +295,7 @@ function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUp
                 </>
               )}
             </button>
+            </div>
           ) : null}
         </div>
       </div>
@@ -462,7 +512,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     });
   }, [displayCards, sortMode, ownedCardIds]);
 
-  const addCard = useCallback(async (card: SetCard) => {
+  const addCard = useCallback(async (card: SetCard, cardVariant?: CardVariant) => {
     const setName = selectedSet?.name ?? selectedSetId ?? "";
     const res = await fetch("/api/collection", {
       method: "POST",
@@ -477,6 +527,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
           imageUrl: getHighResImageUrl(card, game),
           details: {},
         },
+        ...(cardVariant ? { variant: cardVariant } : {}),
       }),
     });
     if (!res.ok) throw new Error("Failed to add");
@@ -493,7 +544,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     onCardAdded?.(); // refresh parent data
   }, [cardIdToRowId, onCardAdded]);
 
-  const updateCard = useCallback(async (rowId: string, updates: { condition?: CardCondition; quantity?: number; notes?: string }) => {
+  const updateCard = useCallback(async (rowId: string, updates: { condition?: CardCondition; quantity?: number; variant?: CardVariant }) => {
     const res = await fetch(`/api/collection/${rowId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -616,7 +667,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
           game={game}
           owned={ownedCardIds.has(lightboxCard.id)}
           collectionItem={cardIdToItem.get(lightboxCard.id)}
-          onAdd={!ownedCardIds.has(lightboxCard.id) ? () => addCard(lightboxCard) : undefined}
+          onAdd={!ownedCardIds.has(lightboxCard.id) ? (v) => addCard(lightboxCard, v) : undefined}
           onRemove={ownedCardIds.has(lightboxCard.id) && cardIdToRowId.has(lightboxCard.id) ? () => removeCard(lightboxCard) : undefined}
           onUpdate={updateCard}
           onClose={() => setLightboxCard(null)}
