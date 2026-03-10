@@ -193,8 +193,9 @@ export async function attachRiftboundPricing(
       if (p) return { ...card, pricing: p };
     }
 
-    // Fallback to card number
-    const number = card.id.replace(/^[^-]+-/, "").replace("-", "/");
+    // Fallback to card number (strip _N suffix from disambiguated IDs)
+    const baseId = card.id.replace(/_\d+$/, "");
+    const number = baseId.replace(/^[^-]+-/, "").replace("-", "/");
     const p = pricing.byNumber.get(number);
     if (p) return { ...card, pricing: p };
   } catch (err) {
@@ -241,7 +242,8 @@ export async function attachRiftboundPricingBatch(
         if (p) return { ...card, pricing: p };
       }
 
-      const number = card.id.replace(/^[^-]+-/, "").replace("-", "/");
+      const baseId = card.id.replace(/_\d+$/, "");
+      const number = baseId.replace(/^[^-]+-/, "").replace("-", "/");
       const p = pricing.byNumber.get(number);
       return p ? { ...card, pricing: p } : card;
     });

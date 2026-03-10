@@ -204,13 +204,18 @@ export async function loadRiftboundCards(setId: string): Promise<RiftboundRawCar
       return [];
   }
 
-  // Filter valid cards and deduplicate by ID
-  const seen = new Set<string>();
+  // Filter valid cards; disambiguate duplicate IDs with a suffix
+  const idCount = new Map<string, number>();
   const cards: RiftboundRawCard[] = [];
   for (const c of data) {
-    if (c.rarity !== null && c.cardType !== null && !seen.has(c.id)) {
-      seen.add(c.id);
-      cards.push(c);
+    if (c.rarity !== null && c.cardType !== null) {
+      const count = idCount.get(c.id) ?? 0;
+      idCount.set(c.id, count + 1);
+      if (count > 0) {
+        cards.push({ ...c, id: `${c.id}_${count}` });
+      } else {
+        cards.push(c);
+      }
     }
   }
   localCardsCache.set(setId, cards);
