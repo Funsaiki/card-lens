@@ -7,7 +7,7 @@
  */
 
 import { CardData, CardPricing } from "@/types";
-import { fetchGroups, fetchPrices, buildNumberToProductMap, toCardPricing } from "./tcgcsv";
+import { fetchGroups, fetchPrices, buildNumberToProductMap, toCardPricing, TCGCSVProduct } from "./tcgcsv";
 
 // TCGCSV category IDs
 const HOLOLIVE_CATEGORY = 87;
@@ -36,6 +36,8 @@ async function getGroups(categoryId: number): Promise<GroupEntry[]> {
 interface GroupPricing {
   byNumber: Map<string, CardPricing>;
   byProductId: Map<number, CardPricing>;
+  /** All product variants for a given card number, with their pricing */
+  byNumberAll: Map<string, { product: TCGCSVProduct; pricing: CardPricing }[]>;
   ts: number;
 }
 
@@ -47,13 +49,14 @@ async function getGroupPricing(categoryId: number, groupId: number, source: stri
   const cached = groupPricingCache.get(key);
   if (cached && Date.now() - cached.ts < PRICING_TTL) return cached;
 
-  const [{ numberMap }, prices] = await Promise.all([
+  const [{ numberMap, numberMultiMap, products }, prices] = await Promise.all([
     buildNumberToProductMap(categoryId, groupId),
     fetchPrices(categoryId, groupId),
   ]);
 
   const byNumber = new Map<string, CardPricing>();
   const byProductId = new Map<number, CardPricing>();
+  const byNumberAll = new Map<string, { product: TCGCSVProduct; pricing: CardPricing }[]>();
 
   for (const [number, productId] of numberMap) {
     const price = prices.get(productId);
@@ -66,8 +69,20 @@ async function getGroupPricing(categoryId: number, groupId: number, source: stri
       byProductId.set(productId, toCardPricing(price, source));
     }
   }
+  // Build multi-variant map
+  for (const [number, productIds] of numberMultiMap) {
+    const variants: { product: TCGCSVProduct; pricing: CardPricing }[] = [];
+    for (const pid of productIds) {
+      const price = prices.get(pid);
+      const product = products.get(pid);
+      if (price && price.marketPrice != null && product) {
+        variants.push({ product, pricing: toCardPricing(price, source) });
+      }
+    }
+    if (variants.length > 0) byNumberAll.set(number, variants);
+  }
 
-  const result: GroupPricing = { byNumber, byProductId, ts: Date.now() };
+  const result: GroupPricing = { byNumber, byProductId, byNumberAll, ts: Date.now() };
   groupPricingCache.set(key, result);
   return result;
 }
@@ -115,6 +130,40 @@ function findRiftboundGroup(setName: string, groups: GroupEntry[]): GroupEntry |
 // ---------- Public API ----------
 
 /**
+ * Match the best price variant for a Hololive card by checking the rarity
+ * in the product name against the card's rarity or name.
+ */
+function matchHololiveVariant(
+  card: CardData,
+  variants: { product: TCGCSVProduct; pricing: CardPricing }[]
+): CardPricing | undefined {
+  if (variants.length === 1) return variants[0].pricing;
+
+  const rarity = (card.rarity ?? "").toLowerCase();
+  const name = (card.name ?? "").toLowerCase();
+
+  // Try matching rarity abbreviation in product cleanName (e.g. "SR", "RR", "UR", "OSR", "C")
+  for (const v of variants) {
+    const pName = v.product.cleanName.toLowerCase();
+    // Check if product name contains the rarity
+    if (rarity && pName.includes(rarity)) return v.pricing;
+  }
+
+  // Try matching rarity from card name (e.g. "Amane Kanata (SR)")
+  const rarityMatch = name.match(/\(([^)]+)\)$/);
+  if (rarityMatch) {
+    const cardRarity = rarityMatch[1].toLowerCase();
+    for (const v of variants) {
+      if (v.product.cleanName.toLowerCase().includes(cardRarity)) return v.pricing;
+    }
+  }
+
+  // Fallback: cheapest variant
+  variants.sort((a, b) => (a.pricing.tcgplayer?.market ?? 0) - (b.pricing.tcgplayer?.market ?? 0));
+  return variants[0].pricing;
+}
+
+/**
  * Attach TCGPlayer pricing to a Hololive card.
  * Fetches only the matching group (2 requests max, cached for 1h).
  */
@@ -126,6 +175,12 @@ export async function attachHololivePricing(card: CardData): Promise<CardData> {
     if (!group) return card;
 
     const pricing = await getGroupPricing(HOLOLIVE_CATEGORY, group.groupId, "TCGPlayer");
+    const variants = pricing.byNumberAll.get(cardNo);
+    if (variants && variants.length > 0) {
+      const matched = matchHololiveVariant(card, variants);
+      if (matched) return { ...card, pricing: matched };
+    }
+    // Fallback to single-entry map
     const cardPricing = pricing.byNumber.get(cardNo);
     if (cardPricing) return { ...card, pricing: cardPricing };
   } catch (err) {
@@ -164,7 +219,14 @@ export async function attachHololivePricingBatch(cards: CardData[]): Promise<Car
       const group = findHololiveGroup(cardNo, groups);
       if (!group) return card;
       const pricing = pricingByGroup.get(group.groupId);
-      const cardPricing = pricing?.byNumber.get(cardNo);
+      if (!pricing) return card;
+      // Try multi-variant match first
+      const variants = pricing.byNumberAll.get(cardNo);
+      if (variants && variants.length > 0) {
+        const matched = matchHololiveVariant(card, variants);
+        if (matched) return { ...card, pricing: matched };
+      }
+      const cardPricing = pricing.byNumber.get(cardNo);
       return cardPricing ? { ...card, pricing: cardPricing } : card;
     });
   } catch (err) {
