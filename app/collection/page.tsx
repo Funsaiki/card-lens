@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { CardGame, CollectionItem, CardCondition, GAME_LABELS, PortfolioSummary, PortfolioHistory, CollectionStats } from "@/types";
 import NavBar from "@/components/NavBar";
@@ -10,6 +11,7 @@ import SetCollectionView from "@/components/SetCollectionView";
 import PortfolioValueCard from "@/components/PortfolioValueCard";
 import PortfolioChart from "@/components/PortfolioChart";
 import StatsPanel from "@/components/StatsPanel";
+import { SkeletonDashboard, SkeletonStats } from "@/components/Skeleton";
 
 const GAMES: { id: CardGame; color: string; gradient: string; icon: React.ReactNode }[] = [
   {
@@ -207,8 +209,8 @@ export default function CollectionPage() {
 
       <div className="p-4 max-w-3xl mx-auto">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="pt-4">
+            <SkeletonDashboard />
           </div>
         ) : (
           <>
@@ -224,10 +226,15 @@ export default function CollectionPage() {
                       try {
                         const res = await fetch("/api/collection/refresh-prices", { method: "POST" });
                         if (res.ok) {
-                          // Re-fetch everything after refresh
+                          const data = await res.json();
+                          toast.success(`${data.updated} price${data.updated !== 1 ? "s" : ""} updated`);
                           await fetchCollection();
+                        } else {
+                          toast.error("Failed to refresh prices");
                         }
-                      } catch {}
+                      } catch {
+                        toast.error("Failed to refresh prices");
+                      }
                       setRefreshing(false);
                     }}
                     disabled={refreshing}
@@ -307,8 +314,8 @@ export default function CollectionPage() {
               </div>
             )}
             {dashTab === "stats" && !stats && totalCards > 0 && (
-              <div className="flex justify-center py-8">
-                <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <div className="mb-6">
+                <SkeletonStats />
               </div>
             )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { CardData } from "@/types";
 import AuthModal from "./AuthModal";
@@ -40,11 +41,13 @@ export default function AddToCollectionButton({ card }: AddToCollectionButtonPro
       const data = await res.json();
       setQuantity(data.quantity);
       setStatus("added");
+      toast.success(data.quantity > 1 ? `${card.name} (x${data.quantity})` : `${card.name} added`);
 
       // Reset after 3 seconds
       setTimeout(() => setStatus("idle"), 3000);
     } catch {
       setStatus("error");
+      toast.error("Failed to add card");
       setTimeout(() => setStatus("idle"), 3000);
     }
   }, [user, card]);

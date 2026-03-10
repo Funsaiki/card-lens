@@ -87,6 +87,7 @@ export function useWebRTC({ role, remotePeerId, onStream }: UseWebRTCOptions) {
       peerRef.current = null;
     }
     setRemoteStream(null);
+    setConnectionState("idle");
   }, [role]);
 
   useEffect(() => {

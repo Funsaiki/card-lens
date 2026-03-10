@@ -9,7 +9,8 @@ import {
 } from "@/lib/indexer";
 import { CardEmbeddingEntry, loadModel, onModelStateChange } from "@/lib/embeddings";
 import { CardGame } from "@/types";
-import SetDropdown from "./SetDropdown";
+import { toast } from "sonner";
+import Dropdown from "./Dropdown";
 
 interface IndexedSetInfo {
   setId: string;
@@ -56,21 +57,21 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
     });
   }, [game]);
 
-  // Filter sets by search query
   const indexedSetIds = useMemo(() => new Set(indexedSets.map((s) => s.setId)), [indexedSets]);
-
-  const filteredSets = useMemo(() => {
-    if (!searchQuery.trim()) return sets;
-    const q = searchQuery.toLowerCase();
-    return sets.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
-    );
-  }, [sets, searchQuery]);
 
   // Sets that haven't been indexed yet (for "Index All")
   const unindexedSets = useMemo(
-    () => filteredSets.filter((s) => !indexedSetIds.has(s.id)),
-    [filteredSets, indexedSetIds]
+    () => sets.filter((s) => !indexedSetIds.has(s.id)),
+    [sets, indexedSetIds]
+  );
+
+  // Dropdown options
+  const setOptions = useMemo(
+    () => sets.map((s) => ({
+      value: s.id,
+      label: s.cardCount.total > 0 ? `${s.name} (${s.cardCount.total})` : s.name,
+    })),
+    [sets]
   );
 
   const ensureModel = useCallback(async () => {
@@ -102,9 +103,11 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
     try {
       const entries = await indexSet(selectedSet, (p) => setProgress(p), game);
       onIndexComplete(entries);
+      toast.success(`${entries.length} cards indexed`);
     } catch (err) {
       console.error("Indexing error:", err);
       setError("Indexing failed. Try again.");
+      toast.error("Indexing failed");
     } finally {
       setIndexing(false);
       setProgress(null);
@@ -127,9 +130,10 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
     const toIndex = [...unindexedSets];
     setIndexAllProgress({ current: 0, total: toIndex.length });
 
+    let indexed = 0;
     for (let i = 0; i < toIndex.length; i++) {
       if (cancelRef.current) {
-        setError("Indexing cancelled.");
+        toast("Indexing cancelled", { description: `${indexed} set${indexed !== 1 ? "s" : ""} completed` });
         break;
       }
 
@@ -143,9 +147,15 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
           game
         );
         onIndexComplete(entries);
+        indexed++;
       } catch (err) {
         console.error(`Indexing error for ${set.id}:`, err);
+        toast.error(`Failed to index ${set.name}`);
       }
+    }
+
+    if (!cancelRef.current) {
+      toast.success(`All ${indexed} sets indexed`);
     }
 
     setIndexing(false);
@@ -183,15 +193,26 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
       )}
 
       {/* Set selector dropdown */}
-      <SetDropdown
-        sets={filteredSets}
-        indexedSetIds={indexedSetIds}
-        selectedSet={selectedSet}
-        onSelect={setSelectedSet}
-        searchQuery={searchQuery}
+      <Dropdown
+        options={setOptions}
+        value={selectedSet}
+        onChange={setSelectedSet}
+        searchable
+        search={searchQuery}
         onSearchChange={setSearchQuery}
         disabled={indexing || loading || dbLoading}
-        loading={loading}
+        disabledValues={indexedSetIds}
+        placeholder={loading ? "Loading sets..." : `Choose a set... (${sets.length})`}
+        renderOption={(opt, { disabled: isDisabled }) => (
+          <span className="flex items-center justify-between w-full">
+            <span className="truncate">{opt.label}</span>
+            {isDisabled && (
+              <svg className="w-3 h-3 text-green-500 flex-shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </span>
+        )}
       />
 
       {/* Action buttons */}

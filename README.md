@@ -138,4 +138,4 @@ types/                  # Types TypeScript partages
 
 ## License
 
-All rights reserved.
+This project is licensed under the [MIT License](./LICENSE).

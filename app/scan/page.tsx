@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import VideoFeed from "@/components/VideoFeed";
 import CardOverlay from "@/components/CardOverlay";
 import CardInfo from "@/components/CardInfo";
@@ -11,13 +10,11 @@ import SessionHistory from "@/components/SessionHistory";
 import SearchResults from "@/components/SearchResults";
 import SetIndexer from "@/components/SetIndexer";
 import Onboarding, { useOnboarding } from "@/components/Onboarding";
-
-import UserMenu from "@/components/UserMenu";
-import AuthModal from "@/components/AuthModal";
+import NavBar from "@/components/NavBar";
+import { SkeletonSearchResults } from "@/components/Skeleton";
 
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useCardRecognition } from "@/hooks/useCardRecognition";
-import { useUser } from "@/hooks/useUser";
 import { CardData, CardGame, SessionCard, GAME_LABELS } from "@/types";
 import { CardEmbeddingEntry } from "@/lib/embeddings";
 
@@ -38,8 +35,6 @@ function ScanContent() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const { show: showOnboarding, dismiss: dismissOnboarding, reopen: reopenOnboarding } = useOnboarding();
-  const { user } = useUser();
-  const [showAuth, setShowAuth] = useState(false);
   const [frameHeightPercent, setFrameHeightPercent] = useState(0.75);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -164,7 +159,10 @@ function ScanContent() {
     [addToEmbeddingDatabase]
   );
 
+  const [camError, setCamError] = useState<"none" | "denied" | "unavailable">("none");
+
   const startWebcam = useCallback(async () => {
+    setCamError("none");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
@@ -172,8 +170,13 @@ function ScanContent() {
       });
       localStreamRef.current = stream;
       setLocalStream(stream);
-    } catch (err) {
-      console.error("Failed to access webcam:", err);
+    } catch (err: unknown) {
+      const name = err instanceof DOMException ? err.name : "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setCamError("denied");
+      } else {
+        setCamError("unavailable");
+      }
     }
   }, []);
 
@@ -181,6 +184,7 @@ function ScanContent() {
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
     setLocalStream(null);
+    setCamError("none");
   }, []);
 
   const handleSourceChange = useCallback(
@@ -204,14 +208,10 @@ function ScanContent() {
   }, [videoSource, cleanupWebRTC, stopWebcam]);
 
   useEffect(() => {
-    if (videoSource === "webcam") {
-      startWebcam();
-    }
     return () => {
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
       localStreamRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-switch to Info tab when a card is detected
@@ -292,12 +292,16 @@ function ScanContent() {
     ) : sidebarTab === "info" ? (
       <CardInfo card={currentCard} confidence={confidence} />
     ) : sidebarTab === "results" ? (
-      <SearchResults
-        query={lastSearchQuery}
-        results={searchResults}
-        onSelect={handleResultSelect}
-        onClose={handleCloseResults}
-      />
+      isSearching ? (
+        <SkeletonSearchResults count={4} />
+      ) : (
+        <SearchResults
+          query={lastSearchQuery}
+          results={searchResults}
+          onSelect={handleResultSelect}
+          onClose={handleCloseResults}
+        />
+      )
     ) : (
       <SessionHistory
         history={history}
@@ -309,37 +313,12 @@ function ScanContent() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
-      {/* Top bar — row 1: nav + actions */}
-      <header className="flex flex-col border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md flex-shrink-0">
-        <div className="flex items-center justify-between gap-2 px-3 py-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <Link
-              href="/"
-              className="text-zinc-400 hover:text-white transition-colors flex-shrink-0"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            <span className="text-sm font-medium text-zinc-200 truncate">{gameLabel}</span>
-            {indexedCount > 0 && (
-              <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full flex-shrink-0 hidden sm:inline">
-                {indexedCount} indexed
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {user ? (
-              <UserMenu user={user} />
-            ) : (
-              <button
-                onClick={() => setShowAuth(true)}
-                className="px-2 py-1 text-[11px] text-zinc-400 hover:text-white transition-colors"
-              >
-                Sign in
-              </button>
-            )}
+      {/* Top bar */}
+      <NavBar
+        subtitle={`${gameLabel}${indexedCount > 0 ? ` \u00b7 ${indexedCount} indexed` : ""}`}
+        compact
+        extraActions={
+          <>
             <button
               onClick={reopenOnboarding}
               className="p-1.5 text-zinc-500 hover:text-white transition-colors"
@@ -362,10 +341,10 @@ function ScanContent() {
                 )}
               </svg>
             </button>
-          </div>
-        </div>
-
-        {/* Row 2: search bar */}
+          </>
+        }
+      >
+        {/* Search bar */}
         <form onSubmit={handleSearch} className="flex items-center gap-1.5 px-3 pb-2">
           <input
             type="text"
@@ -382,14 +361,14 @@ function ScanContent() {
             {isSearching ? "..." : "Go"}
           </button>
         </form>
-      </header>
+      </NavBar>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Video area — full height on mobile, flex-1 on desktop */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Video source selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02]">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06]">
             <span className="text-[11px] text-[var(--muted)]">Source:</span>
             <div className="relative flex bg-white/[0.04] rounded-full border border-white/[0.06] p-0.5">
               <div
@@ -401,7 +380,7 @@ function ScanContent() {
               />
               <button
                 onClick={() => handleSourceChange("webcam")}
-                className={`relative z-10 px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
+                className={`relative z-10 w-16 py-0.5 text-[11px] text-center rounded-full transition-colors ${
                   videoSource === "webcam" ? "text-indigo-300" : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -409,7 +388,7 @@ function ScanContent() {
               </button>
               <button
                 onClick={() => handleSourceChange("phone")}
-                className={`relative z-10 px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${
+                className={`relative z-10 w-16 py-0.5 text-[11px] text-center rounded-full transition-colors ${
                   videoSource === "phone" ? "text-indigo-300" : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -433,14 +412,48 @@ function ScanContent() {
 
           {/* Video feed + overlay */}
           <div className="flex-1 relative m-2 pb-8 lg:pb-0">
-            {videoSource === "phone" &&
-            connectionState !== "connected" ? (
+            {videoSource === "phone" && connectionState !== "connected" ? (
               <div className="h-full flex items-center justify-center">
                 <QRConnector
                   peerId={peerId}
                   connectionState={connectionState}
                   onConnect={startWebRTC}
                 />
+              </div>
+            ) : videoSource === "webcam" && !localStream ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 p-6 bg-white/[0.03] border border-white/[0.06] rounded-xl backdrop-blur-sm">
+                  <div className="w-14 h-14 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-medium text-zinc-200">
+                    {camError === "denied"
+                      ? "Camera access denied"
+                      : camError === "unavailable"
+                        ? "Camera unavailable"
+                        : "Start Webcam"}
+                  </h3>
+                  <p className="text-xs text-[var(--muted)] text-center max-w-[220px]">
+                    {camError === "denied"
+                      ? "Please allow camera access in your browser settings and try again"
+                      : camError === "unavailable"
+                        ? "No camera detected on this device. Try connecting your phone instead."
+                        : "Enable your camera to scan cards in real time"}
+                  </p>
+                  <button
+                    onClick={startWebcam}
+                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-indigo-600/20"
+                  >
+                    {camError !== "none" ? "Retry" : "Start Camera"}
+                  </button>
+                  {camError === "denied" && (
+                    <p className="text-[10px] text-zinc-600 text-center max-w-[200px]">
+                      Look for the camera icon in your browser&apos;s address bar
+                    </p>
+                  )}
+                </div>
               </div>
             ) : (
               <VideoFeed
@@ -472,8 +485,11 @@ function ScanContent() {
         </div>
 
         {/* Desktop sidebar — hidden on mobile */}
-        {sidebarOpen && (
-          <aside className="hidden lg:flex w-72 xl:w-80 border-l border-white/[0.06] bg-white/[0.02] backdrop-blur-sm flex-col flex-shrink-0">
+        <aside
+          className={`hidden lg:flex border-l border-white/[0.06] bg-white/[0.02] backdrop-blur-sm flex-col flex-shrink-0 transition-all duration-300 ease-out overflow-hidden ${
+            sidebarOpen ? "w-72 xl:w-80 opacity-100" : "w-0 opacity-0 border-l-transparent"
+          }`}
+        >
             <div className="relative flex border-b border-white/[0.06]">
               <div
                 className="absolute bottom-0 h-[2px] bg-indigo-500 rounded-full transition-all duration-300 ease-out"
@@ -499,7 +515,6 @@ function ScanContent() {
             </div>
             <div className="flex-1 overflow-y-auto">{panelContent}</div>
           </aside>
-        )}
 
         {/* Mobile bottom sheet — hidden on desktop */}
         <div
@@ -548,7 +563,6 @@ function ScanContent() {
       </div>
 
       <Onboarding show={showOnboarding} onDone={dismissOnboarding} />
-      <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
     </div>
   );
 }
