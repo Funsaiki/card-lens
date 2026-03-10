@@ -18,12 +18,13 @@ type AddState = "idle" | "adding" | "added";
 
 // ---------- Fullscreen lightbox ----------
 
-function CardLightbox({ card, game, owned, onAdd, onClose }: {
+function CardLightbox({ card, game, owned, onAdd, onClose, directImage }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
   onAdd?: () => Promise<void>;
   onClose: () => void;
+  directImage?: boolean;
 }) {
   const [addState, setAddState] = useState<AddState>("idle");
   const isOwned = owned || addState === "added";
@@ -47,7 +48,7 @@ function CardLightbox({ card, game, owned, onAdd, onClose }: {
     }
   };
 
-  const imageUrl = getHighResImageUrl(card, game);
+  const imageUrl = directImage ? (card.image ?? "") : getHighResImageUrl(card, game);
 
   return (
     <div
@@ -125,12 +126,13 @@ function CardLightbox({ card, game, owned, onAdd, onClose }: {
   );
 }
 
-function LazyCard({ card, game, owned, onAdd, onClick }: {
+function LazyCard({ card, game, owned, onAdd, onClick, directImage }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
   onAdd?: () => Promise<void>;
   onClick?: () => void;
+  directImage?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -164,7 +166,7 @@ function LazyCard({ card, game, owned, onAdd, onClick }: {
     }
   };
 
-  const imageUrl = getCardImageUrl(card, game);
+  const imageUrl = directImage ? (card.image ?? "") : getCardImageUrl(card, game);
   const isOwned = owned || addState === "added";
 
   return (
@@ -225,6 +227,10 @@ function getHighResImageUrl(card: SetCard, game: CardGame): string {
   return getCardImageUrl(card, game, "high");
 }
 
+type SortMode = "default" | "owned" | "missing";
+
+const ALL_OWNED = "__all__";
+
 export default function SetCollectionView({ game, ownedCards, onCardAdded, initialSetId }: Props) {
   const [sets, setSets] = useState<GameSet[]>([]);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
@@ -232,6 +238,20 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
   const [loadingSets, setLoadingSets] = useState(true);
   const [loadingCards, setLoadingCards] = useState(false);
   const [lightboxCard, setLightboxCard] = useState<SetCard | null>(null);
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+
+  const isAllView = selectedSetId === ALL_OWNED;
+
+  // Convert owned cards to SetCard[] for the "all" view
+  const allOwnedSetCards = useMemo<SetCard[]>(
+    () => ownedCards.map((c) => ({
+      id: c.cardId,
+      localId: c.cardId,
+      name: c.cardName,
+      image: c.cardImageUrl ?? undefined,
+    })),
+    [ownedCards]
+  );
 
   // Set of owned card IDs for quick lookup (includes locally added)
   const [locallyAdded, setLocallyAdded] = useState<Set<string>>(new Set());
@@ -260,20 +280,20 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     fetchSets(game).then((result) => {
       if (cancelled) return;
       setSets(result);
-      // Use initialSetId if it matches a set by ID or name, otherwise default to last (most recent)
+      // Use initialSetId if provided and matches, otherwise default to "all owned"
       const match = initialSetId && result.find(
         (s) => s.id === initialSetId || s.name === initialSetId
       );
-      setSelectedSetId(match ? match.id : result.length > 0 ? result[result.length - 1].id : null);
+      setSelectedSetId(match ? match.id : ALL_OWNED);
       setLoadingSets(false);
     });
 
     return () => { cancelled = true; };
   }, [game, initialSetId]);
 
-  // Fetch cards when set changes
+  // Fetch cards when a specific set is selected
   useEffect(() => {
-    if (!selectedSetId) return;
+    if (!selectedSetId || selectedSetId === ALL_OWNED) return;
     let cancelled = false;
     setLoadingCards(true);
 
@@ -287,8 +307,18 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
   }, [selectedSetId, game]);
 
   const selectedSet = sets.find((s) => s.id === selectedSetId);
-  const ownedCount = setCards.filter((c) => ownedCardIds.has(c.id)).length;
-  const pct = setCards.length > 0 ? Math.round((ownedCount / setCards.length) * 100) : 0;
+  const displayCards = isAllView ? allOwnedSetCards : setCards;
+  const ownedCount = displayCards.filter((c) => ownedCardIds.has(c.id)).length;
+  const pct = displayCards.length > 0 ? Math.round((ownedCount / displayCards.length) * 100) : 0;
+
+  const sortedCards = useMemo(() => {
+    if (sortMode === "default") return displayCards;
+    return [...displayCards].sort((a, b) => {
+      const aOwned = ownedCardIds.has(a.id) ? 1 : 0;
+      const bOwned = ownedCardIds.has(b.id) ? 1 : 0;
+      return sortMode === "owned" ? bOwned - aOwned : aOwned - bOwned;
+    });
+  }, [displayCards, sortMode, ownedCardIds]);
 
   const addCard = useCallback(async (card: SetCard) => {
     const setName = selectedSet?.name ?? selectedSetId ?? "";
@@ -335,43 +365,72 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
         <Dropdown
           value={selectedSetId ?? ""}
           onChange={(val) => setSelectedSetId(val)}
-          options={sets.map((s) => ({
-            value: s.id,
-            label: s.cardCount.total > 0 ? `${s.name} (${s.cardCount.total})` : s.name,
-          }))}
+          options={[
+            { value: ALL_OWNED, label: `My Collection (${ownedCards.length})` },
+            ...sets.map((s) => ({
+              value: s.id,
+              label: s.cardCount.total > 0 ? `${s.name} (${s.cardCount.total})` : s.name,
+            })),
+          ]}
           searchable
         />
       </div>
 
-      {/* Completion stats */}
-      {selectedSet && !loadingCards && (
+      {/* Stats */}
+      {(isAllView || (selectedSet && !loadingCards)) && (
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-zinc-400">
-              {ownedCount} / {setCards.length} cards
+              {isAllView ? `${displayCards.length} cards` : `${ownedCount} / ${displayCards.length} cards`}
             </span>
-            <span className={`text-xs font-medium ${pct === 100 ? "text-green-400" : pct > 50 ? "text-indigo-400" : "text-[var(--muted)]"}`}>
-              {pct}%
-            </span>
+            {!isAllView && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSortMode((m) => m === "default" ? "owned" : m === "owned" ? "missing" : "default")}
+                  className={`flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md border transition-colors ${
+                    sortMode !== "default"
+                      ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"
+                      : "border-white/[0.08] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.15]"
+                  }`}
+                  title={sortMode === "default" ? "Sort by ownership" : sortMode === "owned" ? "Owned first" : "Missing first"}
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9M3 12h5m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  {sortMode === "default" ? "Sort" : sortMode === "owned" ? "Owned" : "Missing"}
+                </button>
+                <span className={`text-xs font-medium ${pct === 100 ? "text-green-400" : pct > 50 ? "text-indigo-400" : "text-[var(--muted)]"}`}>
+                  {pct}%
+                </span>
+              </div>
+            )}
           </div>
-          <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? "bg-gradient-to-r from-green-500 to-emerald-400" : "bg-gradient-to-r from-indigo-500 to-violet-500"}`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+          {!isAllView && (
+            <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? "bg-gradient-to-r from-green-500 to-emerald-400" : "bg-gradient-to-r from-indigo-500 to-violet-500"}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          )}
         </div>
       )}
 
       {/* Cards grid */}
       <div className="p-4">
-        {loadingCards ? (
+        {!isAllView && loadingCards ? (
           <div className="flex justify-center py-12">
             <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : sortedCards.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-sm text-[var(--muted)]">
+              {isAllView ? "No cards in your collection yet" : "No cards in this set"}
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-            {setCards.map((card) => {
+            {sortedCards.map((card) => {
               const isOwned = ownedCardIds.has(card.id);
               return (
                 <LazyCard
@@ -381,6 +440,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
                   owned={isOwned}
                   onAdd={!isOwned ? () => addCard(card) : undefined}
                   onClick={() => setLightboxCard(card)}
+                  directImage={isAllView}
                 />
               );
             })}
@@ -396,6 +456,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
           owned={ownedCardIds.has(lightboxCard.id)}
           onAdd={!ownedCardIds.has(lightboxCard.id) ? () => addCard(lightboxCard) : undefined}
           onClose={() => setLightboxCard(null)}
+          directImage={isAllView}
         />
       )}
     </div>
