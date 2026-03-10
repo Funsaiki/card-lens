@@ -106,7 +106,15 @@ export async function POST() {
   const hololiveItems = byGame.get("hololive") ?? [];
   if (hololiveItems.length > 0) {
     try {
-      const cards = hololiveItems.map((i) => i.card_data as CardData);
+      const cards = hololiveItems.map((i) => {
+        const c = i.card_data as CardData;
+        // Backfill rarity from card name for cards added before the fix
+        if (!c.rarity && c.name) {
+          const m = c.name.match(/\(([^)]+)\)$/);
+          if (m) c.rarity = m[1];
+        }
+        return c;
+      });
       const enriched = await attachHololivePricingBatch(cards);
       for (let i = 0; i < enriched.length; i++) {
         if (enriched[i].pricing) {

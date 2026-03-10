@@ -36,8 +36,10 @@ export interface TCGCSVPrice {
 /** Map of productId → price data */
 export type TCGCSVPriceMap = Map<number, TCGCSVPrice>;
 
-/** Map of card number (from extendedData) → productId */
+/** Map of card number (from extendedData) → productId(s) */
 export type TCGCSVNumberMap = Map<string, number>;
+/** Map of card number → all productIds with that number */
+export type TCGCSVNumberMultiMap = Map<string, number[]>;
 
 /** TCGCSV wraps all responses in { success, errors, results: T } */
 interface TCGCSVResponse<T> {
@@ -109,9 +111,10 @@ export async function fetchPrices(categoryId: number, groupId: number): Promise<
 export async function buildNumberToProductMap(
   categoryId: number,
   groupId: number
-): Promise<{ numberMap: TCGCSVNumberMap; products: Map<number, TCGCSVProduct> }> {
+): Promise<{ numberMap: TCGCSVNumberMap; numberMultiMap: TCGCSVNumberMultiMap; products: Map<number, TCGCSVProduct> }> {
   const items = await fetchProducts(categoryId, groupId);
   const numberMap: TCGCSVNumberMap = new Map();
+  const numberMultiMap: TCGCSVNumberMultiMap = new Map();
   const products = new Map<number, TCGCSVProduct>();
 
   for (const item of items) {
@@ -119,9 +122,12 @@ export async function buildNumberToProductMap(
     const numField = item.extendedData.find((e) => e.name === "Number");
     if (numField) {
       numberMap.set(numField.value, item.productId);
+      const list = numberMultiMap.get(numField.value) ?? [];
+      list.push(item.productId);
+      numberMultiMap.set(numField.value, list);
     }
   }
-  return { numberMap, products };
+  return { numberMap, numberMultiMap, products };
 }
 
 /**

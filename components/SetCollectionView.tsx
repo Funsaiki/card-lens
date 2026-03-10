@@ -592,7 +592,7 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
           name: card.name,
           game,
           set: setName,
-          rarity: "",
+          rarity: card.name.match(/\(([^)]+)\)$/)?.[1] ?? "",
           imageUrl: getHighResImageUrl(card, game),
           details: { cardNo: card.localId },
         },
