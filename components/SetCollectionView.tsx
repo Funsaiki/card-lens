@@ -2,22 +2,14 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { CardGame, CollectionItem } from "@/types";
-import { fetchSets, fetchSetCards, GameSet, SetCard } from "@/lib/indexer";
-import { getHololiveImageUrl } from "@/lib/hololive";
+import { fetchSets, fetchSetCards, getCardImageUrl, GameSet, SetCard } from "@/lib/indexer";
 import Dropdown from "@/components/Dropdown";
 
 interface Props {
   game: CardGame;
   ownedCards: CollectionItem[];
   onCardAdded?: () => void;
-}
-
-function getCardImageUrl(card: SetCard, game: CardGame): string {
-  if (!card.image) return "";
-  if (game === "hololive") {
-    return `/api/image-proxy?url=${encodeURIComponent(getHololiveImageUrl(card.image))}`;
-  }
-  return `${card.image}/low.webp`;
+  initialSetId?: string | null;
 }
 
 const PLACEHOLDER_BG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect fill='%2327272a' width='1' height='1'/%3E%3C/svg%3E";
@@ -230,14 +222,10 @@ function LazyCard({ card, game, owned, onAdd, onClick }: {
 }
 
 function getHighResImageUrl(card: SetCard, game: CardGame): string {
-  if (!card.image) return "";
-  if (game === "hololive") {
-    return `/api/image-proxy?url=${encodeURIComponent(getHololiveImageUrl(card.image))}`;
-  }
-  return `${card.image}/high.webp`;
+  return getCardImageUrl(card, game, "high");
 }
 
-export default function SetCollectionView({ game, ownedCards, onCardAdded }: Props) {
+export default function SetCollectionView({ game, ownedCards, onCardAdded, initialSetId }: Props) {
   const [sets, setSets] = useState<GameSet[]>([]);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [setCards, setSetCards] = useState<SetCard[]>([]);
@@ -272,15 +260,16 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded }: Pro
     fetchSets(game).then((result) => {
       if (cancelled) return;
       setSets(result);
-      // Default to last set (most recent)
-      if (result.length > 0) {
-        setSelectedSetId(result[result.length - 1].id);
-      }
+      // Use initialSetId if it matches a set by ID or name, otherwise default to last (most recent)
+      const match = initialSetId && result.find(
+        (s) => s.id === initialSetId || s.name === initialSetId
+      );
+      setSelectedSetId(match ? match.id : result.length > 0 ? result[result.length - 1].id : null);
       setLoadingSets(false);
     });
 
     return () => { cancelled = true; };
-  }, [game]);
+  }, [game, initialSetId]);
 
   // Fetch cards when set changes
   useEffect(() => {
@@ -346,7 +335,10 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded }: Pro
         <Dropdown
           value={selectedSetId ?? ""}
           onChange={(val) => setSelectedSetId(val)}
-          options={sets.map((s) => ({ value: s.id, label: `${s.name} (${s.cardCount.total} cards)` }))}
+          options={sets.map((s) => ({
+            value: s.id,
+            label: s.cardCount.total > 0 ? `${s.name} (${s.cardCount.total})` : s.name,
+          }))}
           searchable
         />
       </div>

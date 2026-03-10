@@ -136,21 +136,15 @@ export default function CardOverlay({
               </p>
             </div>
             <div className="text-right">
-              {card.pricing?.tcgplayer?.market != null && (
-                <p className="text-green-400 font-bold text-sm">
-                  ${card.pricing.tcgplayer.market.toFixed(2)}
-                </p>
-              )}
-              {!card.pricing?.tcgplayer?.market && card.pricing?.cardmarket?.market != null && (
-                <p className="text-blue-400 font-bold text-sm">
-                  {card.pricing.cardmarket.market.toFixed(2)}&euro;
-                </p>
-              )}
-              {!card.pricing && card.prices?.market != null && (
-                <p className="text-green-400 font-bold text-sm">
-                  ${card.prices.market.toFixed(2)}
-                </p>
-              )}
+              {(() => {
+                const tcp = card.pricing?.tcgplayer?.market;
+                const cm = card.pricing?.cardmarket?.market;
+                const legacy = card.prices?.market;
+                if (tcp != null) return <p className="text-green-400 font-bold text-sm">${tcp.toFixed(2)}</p>;
+                if (cm != null) return <p className="text-blue-400 font-bold text-sm">{cm.toFixed(2)}&euro;</p>;
+                if (legacy != null) return <p className="text-green-400 font-bold text-sm">${legacy.toFixed(2)}</p>;
+                return null;
+              })()}
               <p className="text-[10px] text-zinc-400">
                 {confidence.toFixed(0)}% match
               </p>

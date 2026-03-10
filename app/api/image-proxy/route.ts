@@ -5,6 +5,8 @@ export const dynamic = "force-dynamic";
 const ALLOWED_HOSTS = [
   "en.hololive-official-cardgame.com",
   "hololive-official-cardgame.com",
+  "www.optcgapi.com",
+  "tcgplayer-cdn.tcgplayer.com",
 ];
 
 export async function GET(request: NextRequest) {

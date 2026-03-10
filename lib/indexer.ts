@@ -36,8 +36,72 @@ async function fetchPokemonSetCards(setId: string): Promise<SetCard[]> {
   return data.cards ?? [];
 }
 
-function getPokemonImageUrl(card: SetCard): string {
-  return card.image ? `${card.image}/high.webp` : "";
+function pokemonImageUrl(card: SetCard, res: "low" | "high" = "high"): string {
+  return card.image ? `${card.image}/${res}.webp` : "";
+}
+
+function proxyUrl(url: string): string {
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
+// ---------- One Piece (OPTCG API) ----------
+
+const OPTCG_BASE = "https://www.optcgapi.com/api";
+const emptyCount = { total: 0, official: 0 };
+
+async function fetchOnePieceSets(): Promise<GameSet[]> {
+  const [setsRes, decksRes] = await Promise.all([
+    fetch(`${OPTCG_BASE}/allSets/`),
+    fetch(`${OPTCG_BASE}/allDecks/`),
+  ]);
+
+  const sets: GameSet[] = [];
+  if (setsRes.ok) {
+    const data: { set_name: string; set_id: string }[] = await setsRes.json();
+    sets.push(...data.map((s) => ({ id: s.set_id, name: s.set_name, cardCount: emptyCount })));
+  }
+  if (decksRes.ok) {
+    const data: { structure_deck_name: string; structure_deck_id: string }[] = await decksRes.json();
+    sets.push(...data.map((d) => ({ id: d.structure_deck_id, name: d.structure_deck_name, cardCount: emptyCount })));
+  }
+  return sets;
+}
+
+async function fetchOnePieceSetCards(setId: string): Promise<SetCard[]> {
+  const type = setId.startsWith("ST-") ? "decks" : "sets";
+  const res = await fetch(`${OPTCG_BASE}/${type}/${setId}/`);
+  if (!res.ok) return [];
+
+  const data: { card_name: string; card_set_id: string; card_image: string }[] = await res.json();
+  // Deduplicate (parallels have _p1 suffix)
+  const seen = new Set<string>();
+  return data.reduce<SetCard[]>((acc, c) => {
+    if (!seen.has(c.card_set_id)) {
+      seen.add(c.card_set_id);
+      acc.push({ id: c.card_set_id, localId: c.card_set_id, name: c.card_name, image: c.card_image });
+    }
+    return acc;
+  }, []);
+}
+
+// ---------- Riftbound (local data via API) ----------
+
+async function fetchRiftboundSets(): Promise<GameSet[]> {
+  const res = await fetch("/api/riftbound");
+  if (!res.ok) return [];
+  const data: { id: string; name: string; total: number }[] = await res.json();
+  return data.map((s) => ({
+    id: s.id,
+    name: s.name,
+    cardCount: { total: s.total, official: s.total },
+  }));
+}
+
+async function fetchRiftboundSetCards(setId: string): Promise<SetCard[]> {
+  const res = await fetch(`/api/riftbound?set=${encodeURIComponent(setId)}`);
+  if (!res.ok) return [];
+  const data: { id: string; name: string; image: string }[] = await res.json();
+  return data.map((c) => ({ id: c.id, localId: c.id, name: c.name, image: c.image }));
 }
 
 // ---------- Hololive ----------
@@ -84,15 +148,17 @@ async function fetchHololiveSetCards(setId: string): Promise<SetCard[]> {
 }
 
 function getHololiveProxiedImageUrl(card: SetCard): string {
-  if (!card.image) return "";
-  const fullUrl = getHololiveImageUrl(card.image);
-  return `/api/image-proxy?url=${encodeURIComponent(fullUrl)}`;
+  return card.image ? proxyUrl(getHololiveImageUrl(card.image)) : "";
 }
 
 // ---------- Generic API ----------
 
 export async function fetchSets(game?: CardGame): Promise<GameSet[]> {
   switch (game) {
+    case "onepiece":
+      return fetchOnePieceSets();
+    case "riftbound":
+      return fetchRiftboundSets();
     case "hololive":
       return fetchHololiveSets();
     case "pokemon":
@@ -103,6 +169,10 @@ export async function fetchSets(game?: CardGame): Promise<GameSet[]> {
 
 export async function fetchSetCards(setId: string, game?: CardGame): Promise<SetCard[]> {
   switch (game) {
+    case "onepiece":
+      return fetchOnePieceSetCards(setId);
+    case "riftbound":
+      return fetchRiftboundSetCards(setId);
     case "hololive":
       return fetchHololiveSetCards(setId);
     case "pokemon":
@@ -137,6 +207,51 @@ export interface IndexProgress {
   cardName: string;
 }
 
+/** Image URL for display (may go through proxy for CORS). */
+export function getCardImageUrl(card: SetCard, game: CardGame, resolution: "low" | "high" = "low"): string {
+  if (!card.image) return "";
+  switch (game) {
+    case "onepiece":
+    case "riftbound":
+      return card.image;
+    case "hololive":
+      return getHololiveProxiedImageUrl(card);
+    case "pokemon":
+    default:
+      return pokemonImageUrl(card, resolution);
+  }
+}
+
+/** Image URL for indexing (always proxied for CORS). */
+function getIndexImageUrl(card: SetCard, game: CardGame): string {
+  if (!card.image) return "";
+  switch (game) {
+    case "onepiece":
+    case "riftbound":
+      return proxyUrl(card.image);
+    case "hololive":
+      return getHololiveProxiedImageUrl(card);
+    case "pokemon":
+    default:
+      return pokemonImageUrl(card);
+  }
+}
+
+/** Original image URL for storage in embedding DB. */
+function getStorageImageUrl(card: SetCard, game: CardGame): string {
+  if (!card.image) return "";
+  switch (game) {
+    case "onepiece":
+    case "riftbound":
+      return card.image;
+    case "hololive":
+      return getHololiveImageUrl(card.image);
+    case "pokemon":
+    default:
+      return pokemonImageUrl(card);
+  }
+}
+
 /**
  * Index all cards in a set by computing their MobileNet embeddings.
  * Calls onProgress for each card processed.
@@ -147,7 +262,8 @@ export async function indexSet(
   onProgress?: (progress: IndexProgress) => void,
   game?: CardGame
 ): Promise<CardEmbeddingEntry[]> {
-  const cards = await fetchSetCards(setId, game);
+  const g = game ?? "pokemon";
+  const cards = await fetchSetCards(setId, g);
   const entries: CardEmbeddingEntry[] = [];
 
   for (let i = 0; i < cards.length; i++) {
@@ -157,11 +273,7 @@ export async function indexSet(
     if (!card.image) continue;
 
     try {
-      const imageUrl =
-        game === "hololive"
-          ? getHololiveProxiedImageUrl(card)
-          : getPokemonImageUrl(card);
-
+      const imageUrl = getIndexImageUrl(card, g);
       const imageData = await loadImageData(imageUrl);
       const embedding = await computeEmbedding(imageData);
 
@@ -169,12 +281,9 @@ export async function indexSet(
         id: card.id,
         name: card.name,
         embedding,
-        imageUrl:
-          game === "hololive"
-            ? getHololiveImageUrl(card.image)
-            : imageUrl,
+        imageUrl: getStorageImageUrl(card, g),
         set: setId,
-        game: game ?? "pokemon",
+        game: g,
       });
     } catch (err) {
       console.warn(`Failed to index ${card.name}:`, err);

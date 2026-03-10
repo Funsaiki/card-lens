@@ -62,9 +62,7 @@ interface RiotCard {
   keywords?: string[];
   tags?: string[];
   stats?: RiotCardStats;
-  // Documented format
   art?: RiotCardArt;
-  // Actual format (per GitHub issue #1093)
   media?: RiotCardMedia[];
 }
 
@@ -116,16 +114,13 @@ async function fetchRiotContent(): Promise<RiotContentResponse | null> {
 }
 
 function getRiotCardImage(card: RiotCard): string {
-  // Try documented format first
   if (card.art?.fullURL) return card.art.fullURL;
   if (card.art?.thumbnailURL) return card.art.thumbnailURL;
 
-  // Try actual format (media array)
   if (card.media?.length) {
     const full = card.media.find((m) => m.type === "full" || m.type === "card_art");
     const any = full ?? card.media[0];
     if (any?.url) {
-      // URL might be relative or absolute
       if (any.url.startsWith("http")) return any.url;
       return `${RIOT_CARD_IMAGE_BASE}${any.url}`;
     }
@@ -209,7 +204,15 @@ export async function loadRiftboundCards(setId: string): Promise<RiftboundRawCar
       return [];
   }
 
-  const cards = data.filter((c) => c.rarity !== null && c.cardType !== null);
+  // Filter valid cards and deduplicate by ID
+  const seen = new Set<string>();
+  const cards: RiftboundRawCard[] = [];
+  for (const c of data) {
+    if (c.rarity !== null && c.cardType !== null && !seen.has(c.id)) {
+      seen.add(c.id);
+      cards.push(c);
+    }
+  }
   localCardsCache.set(setId, cards);
   return cards;
 }
