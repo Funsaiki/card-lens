@@ -64,12 +64,9 @@ const GAMES = [
     gradient: "from-cyan-400 via-sky-500 to-blue-500",
     glow: "group-hover:shadow-cyan-500/20",
     icon: (
-      /* Hololive — stylized diamond logo */
-      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M12 2L22 12L12 22L2 12Z" />
-        <path d="M12 7L17 12L12 17L7 12Z" />
-        <path d="M12 7V2M17 12H22M12 17V22M7 12H2" strokeWidth="0.8" />
-        <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+      /* Cover Corp — play triangle with fold */
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 4.5a1.5 1.5 0 0 1 2.2-.3L19.8 11a1.5 1.5 0 0 1 0 2.4L8.2 19.8a1.5 1.5 0 0 1-2.2-1.2V4.5z" />
       </svg>
     ),
   },

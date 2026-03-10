@@ -1,6 +1,6 @@
 "use client";
 
-import { CardData } from "@/types";
+import { CardData, GAME_LABELS } from "@/types";
 import Image from "next/image";
 import PriceChart from "./PriceChart";
 import AddToCollectionButton from "./AddToCollectionButton";
@@ -34,12 +34,7 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
     );
   }
 
-  const gameLabel = {
-    pokemon: "Pokemon TCG",
-    onepiece: "One Piece TCG",
-    riftbound: "Riftbound",
-    hololive: "Hololive OCG",
-  }[card.game];
+  const gameLabel = GAME_LABELS[card.game];
 
   return (
     <div className="flex flex-col gap-4 p-4 overflow-y-auto animate-fade-in-up">

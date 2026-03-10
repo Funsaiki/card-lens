@@ -3,25 +3,15 @@ import {
   parsePokemonCard,
   parsePokemonSummary,
   parseOnePieceCard,
-  parseRiftboundCard,
 } from "@/lib/cards-api";
 import { CardGame } from "@/types";
 import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
+import { loadAllRiftboundCardsWithRiot } from "@/lib/riftbound";
 import hololiveCardsData from "@/data/hololive-cards.json";
 
 export const dynamic = "force-dynamic";
 
 const hololiveCards = hololiveCardsData as HololiveRawCard[];
-
-const SCRYDEX_API_KEY = process.env.SCRYDEX_API_KEY ?? "";
-const SCRYDEX_TEAM_ID = process.env.SCRYDEX_TEAM_ID ?? "";
-
-function scrydexHeaders(): HeadersInit {
-  const h: HeadersInit = {};
-  if (SCRYDEX_API_KEY) h["X-Api-Key"] = SCRYDEX_API_KEY;
-  if (SCRYDEX_TEAM_ID) h["X-Team-ID"] = SCRYDEX_TEAM_ID;
-  return h;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -85,14 +75,8 @@ export async function GET(request: NextRequest) {
           break;
         }
         case "riftbound": {
-          const res = await fetch(
-            `https://api.scrydex.com/riftbound/v1/cards/${encodeURIComponent(cardId)}?include=prices`,
-            { headers: scrydexHeaders(), next: { revalidate: 3600 } }
-          );
-          if (res.ok) {
-            const data = await res.json();
-            if (data.data) card = parseRiftboundCard(data.data);
-          }
+          const { cards: rbAll } = await loadAllRiftboundCardsWithRiot();
+          card = rbAll.find((c) => c.id === cardId) ?? null;
           break;
         }
         case "hololive": {
@@ -111,7 +95,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let cards;
+    let cards: import("@/types").CardData[];
 
     switch (game) {
       case "pokemon": {
@@ -160,16 +144,11 @@ export async function GET(request: NextRequest) {
         break;
       }
       case "riftbound": {
-        const res = await fetch(
-          `https://api.scrydex.com/riftbound/v1/cards?q=name:${encodeURIComponent(query)}&page_size=10&include=prices`,
-          { headers: scrydexHeaders(), next: { revalidate: 3600 } }
-        );
-        if (!res.ok) {
-          cards = [];
-          break;
-        }
-        const data = await res.json();
-        cards = (data.data ?? []).map(parseRiftboundCard);
+        const { cards: rbAll } = await loadAllRiftboundCardsWithRiot();
+        const q = query.toLowerCase();
+        cards = rbAll
+          .filter((c) => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
+          .slice(0, 10);
         break;
       }
       case "hololive": {

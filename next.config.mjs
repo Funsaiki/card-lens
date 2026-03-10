@@ -12,7 +12,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "api.scrydex.com",
+        hostname: "tcgplayer-cdn.tcgplayer.com",
       },
       {
         protocol: "https",

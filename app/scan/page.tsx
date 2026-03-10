@@ -18,7 +18,7 @@ import AuthModal from "@/components/AuthModal";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useCardRecognition } from "@/hooks/useCardRecognition";
 import { useUser } from "@/hooks/useUser";
-import { CardData, CardGame, SessionCard } from "@/types";
+import { CardData, CardGame, SessionCard, GAME_LABELS } from "@/types";
 import { CardEmbeddingEntry } from "@/lib/embeddings";
 
 type VideoSource = "webcam" | "phone";
@@ -192,12 +192,7 @@ function ScanContent() {
     setSidebarTab("info");
   };
 
-  const gameLabel = useMemo(() => ({
-    pokemon: "Pokemon",
-    onepiece: "One Piece",
-    riftbound: "Riftbound",
-    hololive: "Hololive",
-  } as const)[game], [game]);
+  const gameLabel = GAME_LABELS[game];
 
   const tabs = useMemo<{ id: SidebarTab; label: string; badge?: string }[]>(() => [
     { id: "index", label: "Index", badge: indexedCount > 0 ? String(indexedCount) : undefined },

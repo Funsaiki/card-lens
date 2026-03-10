@@ -1,5 +1,12 @@
 export type CardGame = "pokemon" | "onepiece" | "riftbound" | "hololive";
 
+export const GAME_LABELS: Record<CardGame, string> = {
+  pokemon: "Pokemon TCG",
+  onepiece: "One Piece TCG",
+  riftbound: "Riftbound",
+  hololive: "Hololive OCG",
+};
+
 export interface CardPrice {
   low?: number;
   mid?: number;

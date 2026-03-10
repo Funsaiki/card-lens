@@ -44,13 +44,14 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
   }, []);
 
   useEffect(() => {
-    if (game !== "pokemon" && game !== "hololive") {
-      setSets([]);
-      return;
-    }
     setLoading(true);
+    setSelectedSet("");
     fetchSets(game).then((s) => {
-      setSets(s.filter((set) => set.cardCount.total <= 300));
+      // For games with known card counts, filter out huge sets
+      const filtered = s.filter((set) =>
+        set.cardCount.total === 0 || set.cardCount.total <= 300
+      );
+      setSets(filtered);
       setLoading(false);
     });
   }, [game]);
@@ -155,16 +156,6 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
   const handleCancel = useCallback(() => {
     cancelRef.current = true;
   }, []);
-
-  if (game !== "pokemon" && game !== "hololive") {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-[var(--muted)] text-sm">
-          Indexing is only available for Pokemon TCG and Hololive OCG for now.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="p-3 space-y-2.5">

@@ -183,45 +183,6 @@ export function parseOnePieceCard(raw: OPTCGCard): CardData {
   };
 }
 
-// ---------- Scrydex API (Riftbound) ----------
-
-interface ScrydexCard {
-  id: string;
-  name: string;
-  domain?: string;
-  type?: string;
-  rarity?: string;
-  artist?: string;
-  rules?: string[];
-  images?: { small?: string; medium?: string; large?: string }[];
-  expansion?: { id: string; name: string; code?: string };
-  variants?: { prices?: { market?: number; low?: number }[] }[];
-}
-
-export function parseRiftboundCard(raw: ScrydexCard): CardData {
-  const img = raw.images?.[0];
-  const variant = raw.variants?.[0];
-  const price = variant?.prices?.[0];
-
-  return {
-    id: raw.id,
-    name: raw.name,
-    game: "riftbound",
-    set: raw.expansion?.name ?? "Unknown",
-    rarity: raw.rarity ?? "Unknown",
-    imageUrl: img?.large ?? img?.medium ?? img?.small ?? "",
-    prices: price?.market
-      ? { market: price.market, currency: "USD" }
-      : undefined,
-    details: {
-      ...(raw.type ? { type: raw.type } : {}),
-      ...(raw.domain ? { domain: raw.domain } : {}),
-      ...(raw.artist ? { artist: raw.artist } : {}),
-      ...(raw.rules?.length ? { text: raw.rules.join("\n") } : {}),
-    },
-  };
-}
-
 // ---------- Generic search ----------
 
 export async function searchCards(
