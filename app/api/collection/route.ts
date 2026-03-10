@@ -14,8 +14,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const game = searchParams.get("game");
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-  const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50), 100);
-  const offset = (page - 1) * limit;
+  const all = searchParams.get("all") === "1";
+  const limit = all ? 10000 : Math.min(Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50), 100);
+  const offset = all ? 0 : (page - 1) * limit;
 
   let query = supabase
     .from("collection_items")
