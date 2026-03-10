@@ -18,9 +18,12 @@ export default function NavBar() {
       <nav className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-md">
         <Link href="/" className="flex items-center gap-2 group">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-shadow">
-            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeLinecap="round">
+              <path d="M3 8V5a2 2 0 0 1 2-2h3" strokeWidth="2.5" />
+              <path d="M16 3h3a2 2 0 0 1 2 2v3" strokeWidth="2.5" />
+              <path d="M21 16v3a2 2 0 0 1-2 2h-3" strokeWidth="2.5" />
+              <path d="M8 21H5a2 2 0 0 1-2-2v-3" strokeWidth="2.5" />
+              <rect x="8" y="6" width="8" height="12" rx="1" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15" />
             </svg>
           </div>
           <span className="text-sm font-semibold text-zinc-200 group-hover:text-white transition-colors">
