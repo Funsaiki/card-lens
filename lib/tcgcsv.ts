@@ -39,11 +39,20 @@ export type TCGCSVPriceMap = Map<number, TCGCSVPrice>;
 /** Map of card number (from extendedData) → productId */
 export type TCGCSVNumberMap = Map<string, number>;
 
-async function fetchJson<T>(url: string): Promise<T | null> {
+/** TCGCSV wraps all responses in { success, errors, results: T } */
+interface TCGCSVResponse<T> {
+  success: boolean;
+  errors: string[];
+  results: T;
+}
+
+async function fetchResults<T>(url: string): Promise<T | null> {
   try {
     const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) return null;
-    return await res.json();
+    const json: TCGCSVResponse<T> = await res.json();
+    if (!json.success) return null;
+    return json.results;
   } catch {
     return null;
   }
@@ -53,7 +62,7 @@ async function fetchJson<T>(url: string): Promise<T | null> {
  * Fetch all groups (sets) for a category.
  */
 export async function fetchGroups(categoryId: number): Promise<{ groupId: number; name: string }[]> {
-  const data = await fetchJson<{ groupId: number; name: string }[]>(
+  const data = await fetchResults<{ groupId: number; name: string }[]>(
     `${BASE}/${categoryId}/groups`
   );
   return data ?? [];
@@ -63,7 +72,7 @@ export async function fetchGroups(categoryId: number): Promise<{ groupId: number
  * Fetch all products for a specific group.
  */
 export async function fetchProducts(categoryId: number, groupId: number): Promise<TCGCSVProduct[]> {
-  const data = await fetchJson<TCGCSVProduct[]>(
+  const data = await fetchResults<TCGCSVProduct[]>(
     `${BASE}/${categoryId}/${groupId}/products`
   );
   return data ?? [];
@@ -77,7 +86,7 @@ export async function fetchPrices(categoryId: number, groupId: number): Promise<
   const cached = priceCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
 
-  const data = await fetchJson<TCGCSVPrice[]>(
+  const data = await fetchResults<TCGCSVPrice[]>(
     `${BASE}/${categoryId}/${groupId}/prices`
   );
   const map: TCGCSVPriceMap = new Map();
