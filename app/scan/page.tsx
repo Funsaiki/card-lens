@@ -46,10 +46,10 @@ function ScanContent() {
   const sheetRef = useRef<HTMLDivElement>(null);
   const sheetScrollRef = useRef<HTMLDivElement>(null);
 
-  // Swipe-down-to-close on mobile bottom sheet
+  // Swipe gestures on mobile bottom sheet (up to open, down to close)
   useEffect(() => {
     const sheet = sheetRef.current;
-    if (!sheet || !mobilePanelOpen) return;
+    if (!sheet) return;
 
     let dragging = false;
     let startY = 0;
@@ -63,25 +63,39 @@ function ScanContent() {
 
     const onTouchMove = (e: TouchEvent) => {
       delta = e.touches[0].clientY - startY;
-      const scrollEl = sheetScrollRef.current;
-      const isAtTop = !scrollEl || scrollEl.scrollTop <= 0;
 
-      if (delta > 0 && isAtTop) {
-        e.preventDefault();
-        dragging = true;
-        sheet.style.transform = `translateY(${delta}px)`;
-        sheet.style.transition = "none";
+      if (mobilePanelOpen) {
+        // Swipe down to close — only when scroll is at top
+        const scrollEl = sheetScrollRef.current;
+        const isAtTop = !scrollEl || scrollEl.scrollTop <= 0;
+        if (delta > 0 && isAtTop) {
+          e.preventDefault();
+          dragging = true;
+          sheet.style.transform = `translateY(${delta}px)`;
+          sheet.style.transition = "none";
+        }
+      } else {
+        // Swipe up to open
+        if (delta < -10) {
+          e.preventDefault();
+          dragging = true;
+          // Clamp visual feedback between 0 and the full sheet offset
+          const clamped = Math.min(0, delta);
+          sheet.style.transform = `translateY(calc(100% - 2.75rem + ${clamped}px))`;
+          sheet.style.transition = "none";
+        }
       }
     };
 
     const onTouchEnd = () => {
-      if (dragging) {
-        sheet.style.transition = "";
-        if (delta > 80) {
-          setMobilePanelOpen(false);
-        } else {
-          sheet.style.transform = "translateY(0)";
-        }
+      if (!dragging) return;
+      sheet.style.transition = "";
+      sheet.style.transform = "";
+
+      if (mobilePanelOpen) {
+        if (delta > 80) setMobilePanelOpen(false);
+      } else {
+        if (delta < -60) setMobilePanelOpen(true);
       }
     };
 
