@@ -88,30 +88,8 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
         </div>
       </div>
 
-      {/* Prices — interactive charts */}
+      {/* Prices */}
       {card.pricing && <PriceChart pricing={card.pricing} />}
-
-      {/* Prices — legacy single marketplace (One Piece, Riftbound) */}
-      {!card.pricing && card.prices && (
-        <div className="bg-white/[0.04] border border-white/[0.06] rounded-lg p-3">
-          <p className="text-[var(--muted)] text-xs mb-2">Market Price</p>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-green-400">
-              ${card.prices.market?.toFixed(2) ?? "N/A"}
-            </span>
-            <span className="text-xs text-[var(--muted)]">{card.prices.currency}</span>
-          </div>
-          {(card.prices.low || card.prices.high) && (
-            <div className="flex gap-4 mt-2 text-xs text-[var(--muted)]">
-              {card.prices.low && <span>Low: ${card.prices.low.toFixed(2)}</span>}
-              {card.prices.mid && <span>Mid: ${card.prices.mid.toFixed(2)}</span>}
-              {card.prices.high && (
-                <span>High: ${card.prices.high.toFixed(2)}</span>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Details */}
       {Object.keys(card.details).length > 0 && (
