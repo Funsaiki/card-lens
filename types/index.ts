@@ -26,11 +26,18 @@ export interface CardmarketPrice extends CardPrice {
   avg30?: number;
 }
 
+export interface PriceHistoryPoint {
+  market?: number;
+  inventory?: number;
+}
+
 export interface CardPricing {
   tcgplayer?: TCGPlayerPrice;
   tcgplayerHolo?: TCGPlayerPrice;
   cardmarket?: CardmarketPrice;
   cardmarketHolo?: CardmarketPrice;
+  priceHistory?: PriceHistoryPoint[];
+  source?: string;
 }
 
 export interface CardData {

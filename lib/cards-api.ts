@@ -1,4 +1,4 @@
-import { CardData, CardGame, CardPricing, TCGPlayerPrice, CardmarketPrice } from "@/types";
+import { CardData, CardGame, CardPricing, TCGPlayerPrice, CardmarketPrice, PriceHistoryPoint } from "@/types";
 
 // ---------- Pokemon (TCGdex — free, no key required) ----------
 
@@ -105,6 +105,7 @@ function parseTCGdexPricing(raw?: TCGdexPricing): CardPricing | undefined {
   }
 
   if (!pricing.tcgplayer && !pricing.tcgplayerHolo && !pricing.cardmarket && !pricing.cardmarketHolo) return undefined;
+  pricing.source = "TCGdex";
   return pricing;
 }
 
@@ -161,6 +162,18 @@ interface OPTCGCard {
   inventory_price?: number;
 }
 
+function buildOnePiecePricing(raw: OPTCGCard): CardPricing | undefined {
+  if (raw.market_price == null && raw.inventory_price == null) return undefined;
+  return {
+    tcgplayer: {
+      market: raw.market_price,
+      low: raw.inventory_price,
+      currency: "USD",
+    },
+    source: "OPTCG API · TCGPlayer",
+  };
+}
+
 export function parseOnePieceCard(raw: OPTCGCard): CardData {
   return {
     id: raw.card_set_id,
@@ -169,9 +182,7 @@ export function parseOnePieceCard(raw: OPTCGCard): CardData {
     set: raw.set_name ?? "Unknown",
     rarity: raw.rarity ?? "Unknown",
     imageUrl: raw.card_image ?? "",
-    prices: raw.market_price
-      ? { market: raw.market_price, currency: "USD" }
-      : undefined,
+    pricing: buildOnePiecePricing(raw),
     details: {
       type: raw.card_type,
       color: raw.card_color,
@@ -181,6 +192,31 @@ export function parseOnePieceCard(raw: OPTCGCard): CardData {
       ...(raw.sub_types ? { traits: raw.sub_types } : {}),
     },
   };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parseOnePieceCardWithHistory(raw: Record<string, any>): CardData {
+  const base = parseOnePieceCard(raw as OPTCGCard);
+
+  // Build 14-day history (Day13 = oldest, Day1 = yesterday, then current)
+  const history: PriceHistoryPoint[] = [];
+  for (let i = 13; i >= 1; i--) {
+    const mp = raw[`Day${i}_Market_Price`] as number | undefined;
+    const ip = raw[`Day${i}_Inventory_Price`] as number | undefined;
+    if (mp != null || ip != null) {
+      history.push({ market: mp ?? undefined, inventory: ip ?? undefined });
+    }
+  }
+  // Add current day
+  if (raw.market_price != null || raw.inventory_price != null) {
+    history.push({ market: raw.market_price, inventory: raw.inventory_price });
+  }
+
+  if (base.pricing && history.length > 1) {
+    base.pricing.priceHistory = history;
+  }
+
+  return base;
 }
 
 // ---------- Generic search ----------

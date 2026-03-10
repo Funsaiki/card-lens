@@ -67,11 +67,16 @@ export default function SessionHistory({
                 {entry.card.set}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
-                {entry.card.prices?.market && (
-                  <span className="text-xs text-green-400">
-                    ${entry.card.prices.market.toFixed(2)}
-                  </span>
-                )}
+                {(() => {
+                  const p = entry.card.pricing?.tcgplayer?.market ?? entry.card.pricing?.cardmarket?.market ?? entry.card.prices?.market;
+                  if (p == null) return null;
+                  const isEur = entry.card.pricing?.cardmarket?.market != null && entry.card.pricing?.tcgplayer?.market == null;
+                  return (
+                    <span className="text-xs text-green-400">
+                      {isEur ? `${p.toFixed(2)}€` : `$${p.toFixed(2)}`}
+                    </span>
+                  );
+                })()}
                 <span className="text-xs text-zinc-600">
                   #{history.length - index}
                 </span>
