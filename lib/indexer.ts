@@ -248,6 +248,11 @@ export function getCardImageUrl(card: SetCard, game: CardGame, resolution: "low"
   return resolveImageUrl(card, game, "display", resolution);
 }
 
+/** Raw image URL for DB storage (never proxied). */
+export function getCardStorageUrl(card: SetCard, game: CardGame): string {
+  return resolveImageUrl(card, game, "storage");
+}
+
 /**
  * Index all cards in a set by computing their MobileNet embeddings.
  * Calls onProgress for each card processed.

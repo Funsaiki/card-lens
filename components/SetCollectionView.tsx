@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { CardGame, CollectionItem, CardCondition, CardVariant } from "@/types";
-import { fetchSets, fetchSetCards, getCardImageUrl, GameSet, SetCard } from "@/lib/indexer";
+import { fetchSets, fetchSetCards, getCardStorageUrl, GameSet, SetCard } from "@/lib/indexer";
 import Dropdown from "@/components/Dropdown";
 import CardLightbox from "@/components/CardLightbox";
 import LazyCard from "@/components/LazyCard";
@@ -18,10 +18,6 @@ interface Props {
   initialSetId?: string | null;
 }
 
-
-function getHighResImageUrl(card: SetCard, game: CardGame): string {
-  return getCardImageUrl(card, game, "high");
-}
 
 type SortMode = "default" | "owned" | "missing";
 
@@ -212,7 +208,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
           game,
           set: setName,
           rarity: card.name.match(/\(([^)]+)\)$/)?.[1] ?? "",
-          imageUrl: getHighResImageUrl(card, game),
+          imageUrl: getCardStorageUrl(card, game),
           details: { cardNo: card.localId },
         },
         ...(cardVariant ? { variant: cardVariant } : {}),
@@ -235,7 +231,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
           game,
           set: setName,
           rarity: card.name.match(/\(([^)]+)\)$/)?.[1] ?? "",
-          imageUrl: getHighResImageUrl(card, game),
+          imageUrl: getCardStorageUrl(card, game),
           details: { cardNo: card.localId },
         },
         status: "wanted",
@@ -417,7 +413,6 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
                   onAdd={!cardOwned && !isWantedView ? () => addCard(card) : undefined}
                   onWant={!cardOwned && !cardWanted ? () => wantCard(card) : undefined}
                   onClick={() => setLightboxCard(card)}
-                  directImage={isSpecialView}
                   selecting={selecting}
                   selected={selected.has(card.id)}
                   onToggleSelect={() => toggleSelect(card.id)}
@@ -472,7 +467,6 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
           onRemove={isOwned(lightboxCard) && getRowId(lightboxCard) ? () => removeCard(lightboxCard) : undefined}
           onUpdate={updateCard}
           onClose={() => setLightboxCard(null)}
-          directImage={isAllView}
         />
       )}
     </div>

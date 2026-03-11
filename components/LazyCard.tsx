@@ -10,7 +10,7 @@ const PLACEHOLDER_BG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/
 type AddState = "idle" | "adding" | "added";
 type WantState = "idle" | "wanting" | "wanted";
 
-export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onClick, directImage, selecting, selected, onToggleSelect }: {
+export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onClick, selecting, selected, onToggleSelect }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
@@ -18,7 +18,6 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
   onAdd?: () => Promise<void>;
   onWant?: () => Promise<void>;
   onClick?: () => void;
-  directImage?: boolean;
   selecting?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
@@ -76,7 +75,7 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
     }
   };
 
-  const imageUrl = directImage ? (card.image ?? "") : getCardImageUrl(card, game);
+  const imageUrl = getCardImageUrl(card, game);
   const isOwned = owned || addState === "added";
   const isWanted = wanted || wantState === "wanted";
 

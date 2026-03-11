@@ -11,13 +11,9 @@ import { getBuyLinks } from "@/lib/buy-links";
 const CONDITIONS: CardCondition[] = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
 const VARIANTS: CardVariant[] = ["normal", "reverse_holo"];
 
-function getHighResImageUrl(card: SetCard, game: CardGame): string {
-  return getCardImageUrl(card, game, "high");
-}
-
 type AddState = "idle" | "adding" | "added";
 
-export default function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUpdate, onClose, directImage }: {
+export default function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUpdate, onClose }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
@@ -26,7 +22,6 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
   onRemove?: () => Promise<void>;
   onUpdate?: (rowId: string, updates: { condition?: CardCondition; quantity?: number; variant?: CardVariant }) => Promise<void>;
   onClose: () => void;
-  directImage?: boolean;
 }) {
   const [addState, setAddState] = useState<AddState>("idle");
   const [removeState, setRemoveState] = useState<"idle" | "removing" | "removed">("idle");
@@ -89,7 +84,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
     setSaving(false);
   };
 
-  const imageUrl = directImage ? (card.image ?? "") : getHighResImageUrl(card, game);
+  const imageUrl = getCardImageUrl(card, game, "high");
 
   return (
     <div
