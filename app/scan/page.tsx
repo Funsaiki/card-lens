@@ -344,25 +344,25 @@ function ScanContent() {
             </button>
           </>
         }
-      >
-        {/* Search bar */}
-        <form onSubmit={handleSearch} className="flex items-center gap-1.5 px-3 pb-2">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search card..."
-            className="flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
-          />
-          <button
-            type="submit"
-            disabled={isSearching}
-            className="px-2.5 py-1.5 text-sm bg-white/[0.06] hover:bg-white/[0.1] disabled:opacity-50 text-zinc-300 rounded-lg border border-white/[0.08] transition-colors flex-shrink-0"
-          >
-            {isSearching ? "..." : "Go"}
-          </button>
-        </form>
-      </NavBar>
+      />
+
+      {/* Search bar */}
+      <form onSubmit={handleSearch} className="flex items-center gap-1.5 px-3 py-2 border-b border-white/[0.06] bg-white/[0.02]">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search card..."
+          className="flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-white/[0.04] border border-white/[0.08] rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
+        />
+        <button
+          type="submit"
+          disabled={isSearching}
+          className="px-2.5 py-1.5 text-sm bg-white/[0.06] hover:bg-white/[0.1] disabled:opacity-50 text-zinc-300 rounded-lg border border-white/[0.08] transition-colors flex-shrink-0"
+        >
+          {isSearching ? "..." : "Go"}
+        </button>
+      </form>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
