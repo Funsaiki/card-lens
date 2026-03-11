@@ -90,7 +90,7 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
           : isOwned
             ? "border-indigo-500/30 shadow-sm shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:border-indigo-500/50"
             : isWanted
-              ? "border-amber-500/30 shadow-sm shadow-amber-500/10 hover:shadow-amber-500/20 hover:border-amber-500/50"
+              ? "border-amber-500/30 shadow-sm shadow-amber-500/10 hover:shadow-amber-500/20 hover:border-amber-500/50 opacity-60 saturate-[0.7] hover:opacity-90 hover:saturate-100"
               : "border-white/[0.04] opacity-35 grayscale hover:opacity-80 hover:grayscale-0 hover:shadow-white/10"
       }`}
     >
@@ -142,15 +142,21 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
               )}
             </button>
           )}
-          {onWant && !isWanted && (
+          {onWant && (!isWanted || wantState === "wanted") && (
             <button
               onClick={handleWant}
-              disabled={wantState === "wanting"}
-              className="p-2 bg-amber-600/90 hover:bg-amber-500 rounded-full shadow-lg shadow-black/40 transition-all scale-75 group-hover/card:scale-100"
+              disabled={wantState !== "idle"}
+              className={`p-2 rounded-full shadow-lg shadow-black/40 transition-all scale-75 group-hover/card:scale-100 ${
+                wantState === "wanted" ? "bg-green-600/90" : "bg-amber-600/90 hover:bg-amber-500"
+              }`}
               title={`Want ${card.name}`}
             >
               {wantState === "wanting" ? (
                 <Spinner size="md" color="yellow" />
+              ) : wantState === "wanted" ? (
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
               ) : (
                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
