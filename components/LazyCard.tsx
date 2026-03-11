@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { CardGame } from "@/types";
+import Spinner from "@/components/ui/Spinner";
 import { getCardImageUrl, SetCard } from "@/lib/indexer";
 
 const PLACEHOLDER_BG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect fill='%2327272a' width='1' height='1'/%3E%3C/svg%3E";
@@ -113,7 +114,7 @@ export default function LazyCard({ card, game, owned, onAdd, onClick, directImag
             title={`Add ${card.name}`}
           >
             {addState === "adding" ? (
-              <span className="block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <Spinner size="md" />
             ) : (
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />

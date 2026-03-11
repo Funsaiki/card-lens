@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { CardGame, CollectionItem, CardCondition, CardVariant, CONDITION_LABELS, VARIANT_LABELS, MAX_QUANTITY } from "@/types";
+import Spinner from "@/components/ui/Spinner";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import { getCardImageUrl, SetCard } from "@/lib/indexer";
 
 const CONDITIONS: CardCondition[] = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
@@ -139,7 +141,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
                     className="flex items-center gap-1 px-2 py-1 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-50"
                   >
                     {removeState === "removing" ? (
-                      <span className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                      <Spinner color="red" />
                     ) : (
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -153,41 +155,22 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
               {showVariant && (
                 <div className="space-y-1.5">
                   <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Variant</label>
-                  <div className="grid grid-cols-2 gap-1">
-                    {VARIANTS.map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setVariant(v)}
-                        className={`px-2 py-1.5 text-[10px] rounded-md border transition-all ${
-                          variant === v
-                            ? "border-indigo-500/50 bg-indigo-500/15 text-indigo-300 font-medium"
-                            : "border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.12]"
-                        }`}
-                      >
-                        {VARIANT_LABELS[v]}
-                      </button>
-                    ))}
-                  </div>
+                  <SegmentedControl
+                    options={VARIANTS.map((v) => ({ value: v, label: VARIANT_LABELS[v] }))}
+                    value={variant}
+                    onChange={setVariant}
+                  />
                 </div>
               )}
 
               <div className="space-y-1.5">
                 <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Condition</label>
-                <div className="grid grid-cols-3 gap-1">
-                  {CONDITIONS.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setCondition(c)}
-                      className={`px-2 py-1.5 text-[10px] rounded-md border transition-all ${
-                        condition === c
-                          ? "border-indigo-500/50 bg-indigo-500/15 text-indigo-300 font-medium"
-                          : "border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.12]"
-                      }`}
-                    >
-                      {CONDITION_LABELS[c]}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  options={CONDITIONS.map((c) => ({ value: c, label: CONDITION_LABELS[c] }))}
+                  value={condition}
+                  onChange={setCondition}
+                  columns={3}
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -222,7 +205,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
                 >
                   {saving ? (
                     <>
-                      <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <Spinner />
                       Saving...
                     </>
                   ) : (
@@ -236,21 +219,11 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
               {showVariant && (
                 <div className="space-y-1.5">
                   <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Variant</label>
-                  <div className="grid grid-cols-2 gap-1">
-                    {VARIANTS.map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setVariant(v)}
-                        className={`px-2 py-1.5 text-[10px] rounded-md border transition-all ${
-                          variant === v
-                            ? "border-indigo-500/50 bg-indigo-500/15 text-indigo-300 font-medium"
-                            : "border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.12]"
-                        }`}
-                      >
-                        {VARIANT_LABELS[v]}
-                      </button>
-                    ))}
-                  </div>
+                  <SegmentedControl
+                    options={VARIANTS.map((v) => ({ value: v, label: VARIANT_LABELS[v] }))}
+                    value={variant}
+                    onChange={setVariant}
+                  />
                 </div>
               )}
               <button
@@ -260,7 +233,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
               >
               {addState === "adding" ? (
                 <>
-                  <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <Spinner />
                   Adding...
                 </>
               ) : (

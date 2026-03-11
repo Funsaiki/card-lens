@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import Modal from "@/components/ui/Modal";
 
 interface TermsAcceptanceModalProps {
   onAccepted: () => void;
@@ -41,10 +42,7 @@ export default function TermsAcceptanceModal({ onAccepted }: TermsAcceptanceModa
   }, [accepted, onAccepted]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-
-      <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden animate-scale-in">
+    <Modal maxWidth="md">
         <div className="p-6">
           <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
             <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,7 +122,6 @@ export default function TermsAcceptanceModal({ onAccepted }: TermsAcceptanceModa
             <p className="mt-3 text-xs text-red-400 text-center">{error}</p>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

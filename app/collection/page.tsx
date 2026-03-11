@@ -13,6 +13,7 @@ import PortfolioValueCard from "@/components/PortfolioValueCard";
 import PortfolioChart from "@/components/PortfolioChart";
 import StatsPanel from "@/components/StatsPanel";
 import { SkeletonDashboard, SkeletonStats } from "@/components/Skeleton";
+import Spinner from "@/components/ui/Spinner";
 
 const GAMES: { id: CardGame; color: string; gradient: string; icon: React.ReactNode }[] = [
   {
@@ -136,7 +137,7 @@ export default function CollectionPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <Spinner size="lg" color="indigo" />
       </div>
     );
   }

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import Spinner from "@/components/ui/Spinner";
 import { useUser } from "@/hooks/useUser";
 import { CardData } from "@/types";
 import AuthModal from "./AuthModal";
@@ -73,7 +74,7 @@ export default function AddToCollectionButton({ card }: AddToCollectionButtonPro
       >
         {status === "adding" ? (
           <>
-            <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <Spinner />
             Adding...
           </>
         ) : status === "added" ? (

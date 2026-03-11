@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Modal from "@/components/ui/Modal";
 
 const STORAGE_KEY = "card-lens-onboarding-done";
 
@@ -94,15 +95,7 @@ export default function Onboarding({ show, onDone }: OnboardingProps) {
   const isFirst = step === 0;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-5 py-6">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in"
-        onClick={onDone}
-      />
-
-      {/* Card */}
-      <div className="relative w-full max-w-sm max-h-[90vh] bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden animate-scale-in">
+    <Modal onClose={onDone}>
         {/* Progress bar */}
         <div className="h-0.5 bg-zinc-800">
           <div
@@ -179,7 +172,6 @@ export default function Onboarding({ show, onDone }: OnboardingProps) {
             {isLast ? "Get started" : "Next"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
