@@ -50,9 +50,9 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
     setLoading(true);
     setSelectedSet("");
     fetchSets(game).then((s) => {
-      // For games with known card counts, filter out huge sets
+      // For games with known card counts, filter out huge sets (>500 cards)
       const filtered = s.filter((set) =>
-        set.cardCount.total === 0 || set.cardCount.total <= 300
+        set.cardCount.total === 0 || set.cardCount.total <= 500
       );
       setSets(filtered);
       setLoading(false);
