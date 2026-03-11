@@ -14,6 +14,7 @@ import PortfolioChart from "@/components/PortfolioChart";
 import StatsPanel from "@/components/StatsPanel";
 import { SkeletonDashboard, SkeletonStats } from "@/components/Skeleton";
 import Spinner from "@/components/ui/Spinner";
+import { exportCollectionCsv } from "@/lib/csv-export";
 
 const GAMES: { id: CardGame; color: string; gradient: string; icon: React.ReactNode }[] = [
   {
@@ -78,6 +79,7 @@ interface RawCollectionItem {
   quantity: number;
   condition: CardCondition;
   variant: CardVariant | null;
+  status: string | null;
   notes: string | null;
   added_at: string;
 }
@@ -95,6 +97,7 @@ function mapItem(raw: RawCollectionItem): CollectionItem {
     quantity: raw.quantity,
     condition: raw.condition,
     variant: raw.variant ?? "normal",
+    status: (raw.status === "wanted" ? "wanted" : "owned") as CollectionItem["status"],
     notes: raw.notes,
     addedAt: raw.added_at,
   };
@@ -163,19 +166,24 @@ export default function CollectionPage() {
 
   // Per-game stats
   const gameStats = GAMES.map((g) => {
-    const gameItems = items.filter((i) => i.game === g.id);
-    const unique = gameItems.length;
-    const total = gameItems.reduce((sum, i) => sum + i.quantity, 0);
-    const sets = new Set(gameItems.map((i) => i.cardSet).filter(Boolean)).size;
-    return { ...g, unique, total, sets };
+    const gameOwned = items.filter((i) => i.game === g.id && i.status === "owned");
+    const gameWanted = items.filter((i) => i.game === g.id && i.status === "wanted");
+    const unique = gameOwned.length;
+    const total = gameOwned.reduce((sum, i) => sum + i.quantity, 0);
+    const sets = new Set(gameOwned.map((i) => i.cardSet).filter(Boolean)).size;
+    const wantedCount = gameWanted.length;
+    return { ...g, unique, total, sets, wantedCount };
   });
 
-  const totalCards = items.length;
+  const ownedItems = items.filter((i) => i.status === "owned");
+  const totalCards = ownedItems.length;
 
   // Game detail view
   if (gameView) {
     const game = gameStats.find((g) => g.id === gameView.game)!;
     const gameItems = items.filter((i) => i.game === gameView.game);
+    const gameOwned = gameItems.filter((i) => i.status === "owned");
+    const gameWanted = gameItems.filter((i) => i.status === "wanted");
     return (
       <div className="min-h-screen">
         <NavBar />
@@ -199,7 +207,7 @@ export default function CollectionPage() {
           )}
         </div>
         <ErrorBoundary>
-          <SetCollectionView game={gameView.game} ownedCards={gameItems} onCardAdded={fetchCollection} initialSetId={gameView.setId} />
+          <SetCollectionView game={gameView.game} ownedCards={gameOwned} wantedCards={gameWanted} onCardAdded={fetchCollection} initialSetId={gameView.setId} />
         </ErrorBoundary>
       </div>
     );
@@ -250,6 +258,16 @@ export default function CollectionPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     {refreshing ? "Updating prices..." : "Refresh prices"}
+                  </button>
+                  <button
+                    onClick={() => exportCollectionCsv(items)}
+                    disabled={items.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-zinc-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.12] rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export CSV
                   </button>
                 </div>
               </div>

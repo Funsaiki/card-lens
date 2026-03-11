@@ -13,6 +13,7 @@ import Spinner from "@/components/ui/Spinner";
 interface Props {
   game: CardGame;
   ownedCards: CollectionItem[];
+  wantedCards?: CollectionItem[];
   onCardAdded?: () => void;
   initialSetId?: string | null;
 }
@@ -26,7 +27,7 @@ type SortMode = "default" | "owned" | "missing";
 
 const ALL_OWNED = "__all__";
 
-export default function SetCollectionView({ game, ownedCards, onCardAdded, initialSetId }: Props) {
+export default function SetCollectionView({ game, ownedCards, wantedCards = [], onCardAdded, initialSetId }: Props) {
   const [sets, setSets] = useState<GameSet[]>([]);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [setCards, setSetCards] = useState<SetCard[]>([]);
@@ -68,6 +69,16 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     },
     [ownedCards, locallyAdded, locallyRemoved]
   );
+
+  // Set of wanted card IDs
+  const wantedCardIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of wantedCards) {
+      ids.add(c.cardId);
+      ids.add(c.id);
+    }
+    return ids;
+  }, [wantedCards]);
 
   // Map card identifier → Supabase row ID for delete
   // Keyed by both cardId (set view) and row id (all-owned view)
@@ -189,6 +200,28 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
     });
     if (!res.ok) throw new Error("Failed to add");
     setLocallyAdded((prev) => new Set(prev).add(card.id));
+    onCardAdded?.();
+  }, [game, selectedSet?.name, selectedSetId, onCardAdded]);
+
+  const wantCard = useCallback(async (card: SetCard) => {
+    const setName = selectedSet?.name ?? selectedSetId ?? "";
+    const res = await fetch("/api/collection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        card: {
+          id: card.id,
+          name: card.name,
+          game,
+          set: setName,
+          rarity: card.name.match(/\(([^)]+)\)$/)?.[1] ?? "",
+          imageUrl: getHighResImageUrl(card, game),
+          details: { cardNo: card.localId },
+        },
+        status: "wanted",
+      }),
+    });
+    if (!res.ok) throw new Error("Failed to add to wishlist");
     onCardAdded?.();
   }, [game, selectedSet?.name, selectedSetId, onCardAdded]);
 
@@ -358,7 +391,9 @@ export default function SetCollectionView({ game, ownedCards, onCardAdded, initi
                   card={card}
                   game={game}
                   owned={cardOwned}
+                  wanted={wantedCardIds.has(card.id) || wantedCardIds.has(card.localId)}
                   onAdd={!cardOwned ? () => addCard(card) : undefined}
+                  onWant={!cardOwned && !wantedCardIds.has(card.id) && !wantedCardIds.has(card.localId) ? () => wantCard(card) : undefined}
                   onClick={() => setLightboxCard(card)}
                   directImage={isAllView}
                   selecting={selecting}

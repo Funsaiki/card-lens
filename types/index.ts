@@ -68,6 +68,10 @@ export const VALID_VARIANTS: CardVariant[] = ["normal", "reverse_holo"];
 
 export const MAX_QUANTITY = 9999;
 
+export type CollectionStatus = "owned" | "wanted";
+
+export const VALID_STATUSES: CollectionStatus[] = ["owned", "wanted"];
+
 export const VARIANT_LABELS: Record<CardVariant, string> = {
   normal: "Normal",
   reverse_holo: "Reverse Holo",
@@ -104,6 +108,7 @@ export interface CollectionItem {
   quantity: number;
   condition: CardCondition;
   variant: CardVariant;
+  status: CollectionStatus;
   notes: string | null;
   addedAt: string;
 }
