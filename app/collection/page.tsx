@@ -230,7 +230,7 @@ export default function CollectionPage() {
               <div className="pt-4 mb-4">
                 <PortfolioValueCard portfolio={portfolio} />
                 {/* Refresh prices button */}
-                <div className="flex justify-center mt-2">
+                <div className="flex justify-center gap-2 mt-2">
                   <button
                     onClick={async () => {
                       setRefreshing(true);
