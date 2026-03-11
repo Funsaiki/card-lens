@@ -2,6 +2,7 @@
 
 import { useRef, useCallback } from "react";
 import { CardData } from "@/types";
+import { getDisplayPrice } from "@/lib/price-utils";
 import { getCardFrameStyle } from "@/lib/card-frame";
 
 interface CardOverlayProps {
@@ -137,13 +138,9 @@ export default function CardOverlay({
             </div>
             <div className="text-right">
               {(() => {
-                const tcp = card.pricing?.tcgplayer?.market;
-                const cm = card.pricing?.cardmarket?.market;
-                const legacy = card.prices?.market;
-                if (tcp != null) return <p className="text-green-400 font-bold text-sm">${tcp.toFixed(2)}</p>;
-                if (cm != null) return <p className="text-blue-400 font-bold text-sm">{cm.toFixed(2)}&euro;</p>;
-                if (legacy != null) return <p className="text-green-400 font-bold text-sm">${legacy.toFixed(2)}</p>;
-                return null;
+                const dp = getDisplayPrice(card);
+                if (!dp) return null;
+                return <p className={`${dp.isEur ? "text-blue-400" : "text-green-400"} font-bold text-sm`}>{dp.text}</p>;
               })()}
               <p className="text-[10px] text-zinc-400">
                 {confidence.toFixed(0)}% match

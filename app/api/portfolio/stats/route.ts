@@ -18,7 +18,8 @@ export async function GET() {
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[Portfolio] stats error:", error);
+    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
 
   if (!items || items.length === 0) {

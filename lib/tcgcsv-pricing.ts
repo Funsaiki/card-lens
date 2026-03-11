@@ -22,11 +22,24 @@ interface GroupEntry {
 
 const groupsCache = new Map<number, { groups: GroupEntry[]; ts: number }>();
 const GROUPS_TTL = 3600_000; // 1 hour
+const MAX_GROUPS_CACHE = 10;
+const MAX_PRICING_CACHE = 50;
+
+/** Evict expired entries; if still over limit, clear all. */
+function pruneCache<K, V extends { ts: number }>(cache: Map<K, V>, max: number, ttl: number) {
+  if (cache.size <= max) return;
+  const now = Date.now();
+  for (const [key, val] of cache) {
+    if (now - val.ts > ttl) cache.delete(key);
+  }
+  if (cache.size > max) cache.clear();
+}
 
 async function getGroups(categoryId: number): Promise<GroupEntry[]> {
   const cached = groupsCache.get(categoryId);
   if (cached && Date.now() - cached.ts < GROUPS_TTL) return cached.groups;
   const groups = await fetchGroups(categoryId);
+  pruneCache(groupsCache, MAX_GROUPS_CACHE, GROUPS_TTL);
   groupsCache.set(categoryId, { groups, ts: Date.now() });
   return groups;
 }
@@ -83,6 +96,7 @@ async function getGroupPricing(categoryId: number, groupId: number, source: stri
   }
 
   const result: GroupPricing = { byNumber, byProductId, byNumberAll, ts: Date.now() };
+  pruneCache(groupPricingCache, MAX_PRICING_CACHE, PRICING_TTL);
   groupPricingCache.set(key, result);
   return result;
 }

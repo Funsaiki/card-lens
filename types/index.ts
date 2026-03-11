@@ -1,5 +1,7 @@
 export type CardGame = "pokemon" | "onepiece" | "riftbound" | "hololive";
 
+export const VALID_GAMES: CardGame[] = ["pokemon", "onepiece", "riftbound", "hololive"];
+
 export const GAME_LABELS: Record<CardGame, string> = {
   pokemon: "Pokemon TCG",
   onepiece: "One Piece TCG",
@@ -62,6 +64,10 @@ export interface SessionCard {
 
 export type CardVariant = "normal" | "reverse_holo";
 
+export const VALID_VARIANTS: CardVariant[] = ["normal", "reverse_holo"];
+
+export const MAX_QUANTITY = 9999;
+
 export const VARIANT_LABELS: Record<CardVariant, string> = {
   normal: "Normal",
   reverse_holo: "Reverse Holo",
@@ -74,6 +80,8 @@ export type CardCondition =
   | "moderately_played"
   | "heavily_played"
   | "damaged";
+
+export const VALID_CONDITIONS: CardCondition[] = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
 
 export const CONDITION_LABELS: Record<CardCondition, string> = {
   mint: "Mint",

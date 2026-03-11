@@ -95,7 +95,7 @@ create table public.portfolio_snapshots (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id) on delete cascade not null,
   snapshot_date date not null,
-  game text, -- null = total across all games
+  game text not null default '_total', -- '_total' = aggregate across all games
   total_value_usd numeric(12, 2) not null default 0,
   card_count integer not null default 0,
   unique_cards integer not null default 0,

@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import Modal from "@/components/ui/Modal";
 
 type AuthTab = "signin" | "signup";
 
@@ -91,10 +92,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-
-      <div className="relative w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden animate-scale-in">
+    <Modal onClose={onClose}>
         {/* Close button */}
         <button
           onClick={onClose}
@@ -298,7 +296,6 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
             </>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

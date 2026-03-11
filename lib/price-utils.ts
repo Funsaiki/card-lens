@@ -26,6 +26,24 @@ export function formatUsd(value: number): string {
 }
 
 /**
+ * Get the display price and currency symbol from a CardData object.
+ * Returns null if no price is available.
+ */
+export function getDisplayPrice(card: CardData): { text: string; isEur: boolean } | null {
+  const tcp = card.pricing?.tcgplayer?.market;
+  const cm = card.pricing?.cardmarket?.market;
+  const legacy = card.prices?.market;
+
+  if (tcp != null) return { text: `$${tcp.toFixed(2)}`, isEur: false };
+  if (cm != null) return { text: `${cm.toFixed(2)}€`, isEur: true };
+  if (legacy != null) {
+    const isEur = card.prices?.currency === "EUR";
+    return { text: isEur ? `${legacy.toFixed(2)}€` : `$${legacy.toFixed(2)}`, isEur };
+  }
+  return null;
+}
+
+/**
  * Price distribution bucket ranges.
  */
 export const PRICE_BUCKETS = [

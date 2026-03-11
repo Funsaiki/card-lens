@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { CardData, CardGame } from "@/types";
 import { attachHololivePricingBatch, attachRiftboundPricingBatch } from "@/lib/tcgcsv-pricing";
@@ -7,6 +7,7 @@ import {
   parseOnePieceCardWithHistory,
 } from "@/lib/cards-api";
 import { loadAllRiftboundCards } from "@/lib/riftbound";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,20 @@ export const dynamic = "force-dynamic";
  * Re-fetches current prices for all cards in the user's collection
  * and updates the card_data JSONB in Supabase.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 2 refreshes per 5 minutes per user
+  const rl = rateLimit(`refresh:${user.id}`, 2, 300_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Please wait before refreshing again" },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+    );
   }
 
   // Fetch all collection items
@@ -29,7 +39,8 @@ export async function POST() {
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[RefreshPrices] error:", error);
+    return NextResponse.json({ error: "Failed to refresh prices" }, { status: 500 });
   }
 
   if (!items || items.length === 0) {

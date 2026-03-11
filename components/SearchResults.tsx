@@ -1,6 +1,7 @@
 "use client";
 
 import { CardData } from "@/types";
+import { getDisplayPrice } from "@/lib/price-utils";
 import Image from "next/image";
 
 interface SearchResultsProps {
@@ -71,12 +72,11 @@ export default function SearchResults({
                   <span className="text-xs text-zinc-400">{card.rarity}</span>
                 )}
                 {(() => {
-                  const p = card.pricing?.tcgplayer?.market ?? card.pricing?.cardmarket?.market ?? card.prices?.market;
-                  if (p == null) return null;
-                  const isEur = card.pricing?.cardmarket?.market != null && card.pricing?.tcgplayer?.market == null;
+                  const dp = getDisplayPrice(card);
+                  if (!dp) return null;
                   return (
-                    <span className="text-xs text-green-400">
-                      {isEur ? `${p.toFixed(2)}€` : `$${p.toFixed(2)}`}
+                    <span className={`text-xs ${dp.isEur ? "text-blue-400" : "text-green-400"}`}>
+                      {dp.text}
                     </span>
                   );
                 })()}

@@ -11,7 +11,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const { ids } = body;
 
   if (!Array.isArray(ids) || ids.length === 0 || ids.length > 500) {
@@ -29,7 +35,8 @@ export async function POST(request: NextRequest) {
     .in("id", ids);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[Collection] bulk-delete error:", error);
+    return NextResponse.json({ error: "Failed to delete cards" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, deleted: count ?? ids.length });

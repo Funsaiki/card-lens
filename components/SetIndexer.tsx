@@ -8,6 +8,8 @@ import {
   IndexProgress,
 } from "@/lib/indexer";
 import { CardEmbeddingEntry, loadModel, onModelStateChange } from "@/lib/embeddings";
+import Spinner from "@/components/ui/Spinner";
+import ProgressBar from "@/components/ui/ProgressBar";
 import { CardGame } from "@/types";
 import { toast } from "sonner";
 import Dropdown from "./Dropdown";
@@ -48,9 +50,9 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
     setLoading(true);
     setSelectedSet("");
     fetchSets(game).then((s) => {
-      // For games with known card counts, filter out huge sets
+      // For games with known card counts, filter out huge sets (>500 cards)
       const filtered = s.filter((set) =>
-        set.cardCount.total === 0 || set.cardCount.total <= 300
+        set.cardCount.total === 0 || set.cardCount.total <= 500
       );
       setSets(filtered);
       setLoading(false);
@@ -179,7 +181,7 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
       {/* DB loading indicator */}
       {dbLoading ? (
         <div className="flex items-center gap-2 py-2">
-          <span className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <Spinner color="indigo" />
           <p className="text-[11px] text-[var(--muted)]">Loading saved database...</p>
         </div>
       ) : indexedCount > 0 && !indexing ? (
@@ -253,7 +255,7 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
       {/* Model loading indicator */}
       {modelLoading && (
         <div className="flex items-center gap-2 py-1">
-          <span className="w-3 h-3 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+          <Spinner color="yellow" />
           <p className="text-[11px] text-yellow-400">Loading AI model (~14 MB)...</p>
         </div>
       )}
@@ -265,12 +267,7 @@ export default function SetIndexer({ game, onIndexComplete, indexedCount, indexe
             <span className="truncate max-w-[140px]">{progress.cardName}</span>
             <span>{progress.current}/{progress.total}</span>
           </div>
-          <div className="w-full bg-white/[0.06] rounded-full h-1">
-            <div
-              className="bg-gradient-to-r from-indigo-500 to-violet-500 h-1 rounded-full transition-all duration-200"
-              style={{ width: `${(progress.current / progress.total) * 100}%` }}
-            />
-          </div>
+          <ProgressBar percent={(progress.current / progress.total) * 100} />
         </div>
       )}
 

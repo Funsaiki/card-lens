@@ -25,13 +25,15 @@ export async function GET(request: NextRequest) {
   if (game) {
     query = query.eq("game", game);
   } else {
-    query = query.is("game", null);
+    // '_total' is the sentinel for the aggregate row (not NULL — see snapshot route)
+    query = query.eq("game", "_total");
   }
 
   const { data, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[Portfolio] history error:", error);
+    return NextResponse.json({ error: "Failed to fetch portfolio history" }, { status: 500 });
   }
 
   const snapshots: PortfolioSnapshot[] = (data ?? []).map((row) => ({

@@ -4,6 +4,7 @@ import { CardData, GAME_LABELS } from "@/types";
 import Image from "next/image";
 import PriceChart from "./PriceChart";
 import AddToCollectionButton from "./AddToCollectionButton";
+import ProgressBar from "@/components/ui/ProgressBar";
 
 interface CardInfoProps {
   card: CardData | null;
@@ -64,12 +65,7 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
             <span>Match confidence</span>
             <span>{confidence.toFixed(0)}%</span>
           </div>
-          <div className="w-full bg-white/[0.06] rounded-full h-1.5">
-            <div
-              className="bg-gradient-to-r from-indigo-500 to-green-500 h-1.5 rounded-full transition-all animate-grow-width"
-              style={{ width: `${confidence}%` }}
-            />
-          </div>
+          <ProgressBar percent={confidence} size="md" gradient="indigo-green" animate />
         </div>
       )}
 
