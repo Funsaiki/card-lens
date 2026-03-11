@@ -5,7 +5,7 @@ import {
   parseOnePieceCard,
   parseOnePieceCardWithHistory,
 } from "@/lib/cards-api";
-import { CardGame } from "@/types";
+import { CardGame, VALID_GAMES } from "@/types";
 import { parseHololiveCard, HololiveRawCard } from "@/lib/hololive";
 import { loadAllRiftboundCardsWithRiot, loadAllRiftboundCards } from "@/lib/riftbound";
 import { attachHololivePricing, attachHololivePricingBatch, attachRiftboundPricing, attachRiftboundPricingBatch } from "@/lib/tcgcsv-pricing";
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!["pokemon", "onepiece", "riftbound", "hololive"].includes(game)) {
+    if (!(VALID_GAMES as readonly string[]).includes(game)) {
       return NextResponse.json(
         { error: "Invalid game. Use: pokemon, onepiece, riftbound, hololive" },
         { status: 400 }

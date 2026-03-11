@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { CardGame, CollectionItem, CardCondition, CardVariant, CONDITION_LABELS, VARIANT_LABELS } from "@/types";
+import { CardGame, CollectionItem, CardCondition, CardVariant, CONDITION_LABELS, VARIANT_LABELS, MAX_QUANTITY } from "@/types";
 import { getCardImageUrl, SetCard } from "@/lib/indexer";
 
 const CONDITIONS: CardCondition[] = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
@@ -204,7 +204,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
                   </button>
                   <span className="text-sm font-medium text-zinc-200 w-8 text-center">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(Math.min(9999, quantity + 1))}
+                    onClick={() => setQuantity(Math.min(MAX_QUANTITY, quantity + 1))}
                     className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/[0.08] text-zinc-400 hover:text-white hover:border-white/[0.15] transition-colors"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

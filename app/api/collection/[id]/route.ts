@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { VALID_CONDITIONS, VALID_VARIANTS } from "@/types";
+import { VALID_CONDITIONS, VALID_VARIANTS, MAX_QUANTITY } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,7 @@ export async function PATCH(
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   if (body.quantity !== undefined) {
-    if (typeof body.quantity !== "number" || !Number.isInteger(body.quantity) || body.quantity < 1 || body.quantity > 9999) {
+    if (typeof body.quantity !== "number" || !Number.isInteger(body.quantity) || body.quantity < 1 || body.quantity > MAX_QUANTITY) {
       return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
     }
     updates.quantity = body.quantity;

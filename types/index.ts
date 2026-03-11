@@ -66,6 +66,8 @@ export type CardVariant = "normal" | "reverse_holo";
 
 export const VALID_VARIANTS: CardVariant[] = ["normal", "reverse_holo"];
 
+export const MAX_QUANTITY = 9999;
+
 export const VARIANT_LABELS: Record<CardVariant, string> = {
   normal: "Normal",
   reverse_holo: "Reverse Holo",

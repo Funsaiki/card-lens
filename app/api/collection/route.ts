@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { VALID_GAMES, VALID_CONDITIONS, VALID_VARIANTS } from "@/types";
+import { VALID_GAMES, VALID_CONDITIONS, VALID_VARIANTS, MAX_QUANTITY } from "@/types";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
   if (!(VALID_GAMES as readonly string[]).includes(card.game)) {
     return NextResponse.json({ error: "Invalid game" }, { status: 400 });
   }
-  if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1 || quantity > 9999) {
+  if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
     return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
   }
   if (!(VALID_CONDITIONS as readonly string[]).includes(condition)) {

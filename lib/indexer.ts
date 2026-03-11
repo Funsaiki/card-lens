@@ -47,7 +47,7 @@ function proxyUrl(url: string): string {
 // ---------- One Piece (OPTCG API) ----------
 
 const OPTCG_BASE = "https://www.optcgapi.com/api";
-const emptyCount = { total: 0, official: 0 };
+const emptyCount = Object.freeze({ total: 0, official: 0 });
 
 async function fetchOnePieceSets(): Promise<GameSet[]> {
   const [setsRes, decksRes] = await Promise.all([
@@ -282,7 +282,9 @@ export async function indexSet(
         game: g,
       });
     } catch (err) {
-      console.warn(`Failed to index ${card.name}:`, err);
+      if (process.env.NODE_ENV === "development") {
+        console.warn(`Failed to index ${card.name}:`, err);
+      }
     }
   }
 
