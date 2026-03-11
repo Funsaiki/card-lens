@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { CardGame } from "@/types";
 import Spinner from "@/components/ui/Spinner";
 import { getCardImageUrl, displayStoredImageUrl, SetCard } from "@/lib/indexer";
@@ -63,8 +64,10 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
     try {
       await onWant();
       setWantState("wanted");
+      toast.success(`${card.name} added to wishlist`);
     } catch {
       setWantState("idle");
+      toast.error("Failed to add to wishlist");
     }
   };
 
