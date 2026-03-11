@@ -253,6 +253,20 @@ export function getCardStorageUrl(card: SetCard, game: CardGame): string {
   return resolveImageUrl(card, game, "storage");
 }
 
+/** Display a URL that was previously stored in DB (already resolved).
+ *  Proxies hololive URLs for CORS; leaves everything else as-is. */
+export function displayStoredImageUrl(storedUrl: string | undefined): string {
+  if (!storedUrl) return "";
+  // Already proxied (legacy data)
+  if (storedUrl.startsWith("/api/image-proxy")) return storedUrl;
+  // Hololive URLs need CORS proxy
+  if (storedUrl.includes("hololive-official-cardgame.com")) {
+    return proxyUrl(storedUrl);
+  }
+  // Pokemon, One Piece, Riftbound — direct URLs work fine
+  return storedUrl;
+}
+
 /**
  * Index all cards in a set by computing their MobileNet embeddings.
  * Calls onProgress for each card processed.

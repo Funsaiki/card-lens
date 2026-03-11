@@ -413,6 +413,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
                   onAdd={!cardOwned && !isWantedView ? () => addCard(card) : undefined}
                   onWant={!cardOwned && !cardWanted ? () => wantCard(card) : undefined}
                   onClick={() => setLightboxCard(card)}
+                  directImage={isSpecialView}
                   selecting={selecting}
                   selected={selected.has(card.id)}
                   onToggleSelect={() => toggleSelect(card.id)}
@@ -467,6 +468,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
           onRemove={isOwned(lightboxCard) && getRowId(lightboxCard) ? () => removeCard(lightboxCard) : undefined}
           onUpdate={updateCard}
           onClose={() => setLightboxCard(null)}
+          directImage={isSpecialView}
         />
       )}
     </div>

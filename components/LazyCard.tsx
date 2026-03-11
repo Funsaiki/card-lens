@@ -3,14 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { CardGame } from "@/types";
 import Spinner from "@/components/ui/Spinner";
-import { getCardImageUrl, SetCard } from "@/lib/indexer";
+import { getCardImageUrl, displayStoredImageUrl, SetCard } from "@/lib/indexer";
 
 const PLACEHOLDER_BG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect fill='%2327272a' width='1' height='1'/%3E%3C/svg%3E";
 
 type AddState = "idle" | "adding" | "added";
 type WantState = "idle" | "wanting" | "wanted";
 
-export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onClick, selecting, selected, onToggleSelect }: {
+export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onClick, directImage, selecting, selected, onToggleSelect }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
@@ -18,6 +18,7 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
   onAdd?: () => Promise<void>;
   onWant?: () => Promise<void>;
   onClick?: () => void;
+  directImage?: boolean;
   selecting?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
@@ -75,7 +76,7 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
     }
   };
 
-  const imageUrl = getCardImageUrl(card, game);
+  const imageUrl = directImage ? displayStoredImageUrl(card.image) : getCardImageUrl(card, game);
   const isOwned = owned || addState === "added";
   const isWanted = wanted || wantState === "wanted";
 

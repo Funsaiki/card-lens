@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { CardGame, CollectionItem, CardCondition, CardVariant, CONDITION_LABELS, VARIANT_LABELS, MAX_QUANTITY } from "@/types";
 import Spinner from "@/components/ui/Spinner";
 import SegmentedControl from "@/components/ui/SegmentedControl";
-import { getCardImageUrl, SetCard } from "@/lib/indexer";
+import { getCardImageUrl, displayStoredImageUrl, SetCard } from "@/lib/indexer";
 import { getBuyLinks } from "@/lib/buy-links";
 
 const CONDITIONS: CardCondition[] = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
@@ -13,7 +13,7 @@ const VARIANTS: CardVariant[] = ["normal", "reverse_holo"];
 
 type AddState = "idle" | "adding" | "added";
 
-export default function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUpdate, onClose }: {
+export default function CardLightbox({ card, game, owned, collectionItem, onAdd, onRemove, onUpdate, onClose, directImage }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
@@ -22,6 +22,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
   onRemove?: () => Promise<void>;
   onUpdate?: (rowId: string, updates: { condition?: CardCondition; quantity?: number; variant?: CardVariant }) => Promise<void>;
   onClose: () => void;
+  directImage?: boolean;
 }) {
   const [addState, setAddState] = useState<AddState>("idle");
   const [removeState, setRemoveState] = useState<"idle" | "removing" | "removed">("idle");
@@ -84,7 +85,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
     setSaving(false);
   };
 
-  const imageUrl = getCardImageUrl(card, game, "high");
+  const imageUrl = directImage ? displayStoredImageUrl(card.image) : getCardImageUrl(card, game, "high");
 
   return (
     <div
