@@ -366,6 +366,7 @@ export default function CollectionPage() {
                             {game.unique} card{game.unique !== 1 ? "s" : ""}
                             {game.sets > 0 && <span> &middot; {game.sets} set{game.sets !== 1 ? "s" : ""}</span>}
                             {game.total !== game.unique && <span> &middot; {game.total} total</span>}
+                            {game.wantedCount > 0 && <span> &middot; {game.wantedCount} wanted</span>}
                           </p>
                         ) : (
                           <p className="text-xs text-[var(--muted)] mt-0.5">No cards yet</p>

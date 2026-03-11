@@ -26,6 +26,7 @@ function getHighResImageUrl(card: SetCard, game: CardGame): string {
 type SortMode = "default" | "owned" | "missing";
 
 const ALL_OWNED = "__all__";
+const ALL_WANTED = "__wanted__";
 
 export default function SetCollectionView({ game, ownedCards, wantedCards = [], onCardAdded, initialSetId }: Props) {
   const [sets, setSets] = useState<GameSet[]>([]);
@@ -40,6 +41,8 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const isAllView = selectedSetId === ALL_OWNED;
+  const isWantedView = selectedSetId === ALL_WANTED;
+  const isSpecialView = isAllView || isWantedView;
 
   // Convert owned cards to SetCard[] for the "all" view
   // Use Supabase row id as SetCard.id to guarantee uniqueness (same cardId may appear with different variants)
@@ -51,6 +54,17 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
       image: c.cardImageUrl ?? undefined,
     })),
     [ownedCards]
+  );
+
+  // Convert wanted cards to SetCard[] for the "wanted" view
+  const allWantedSetCards = useMemo<SetCard[]>(
+    () => wantedCards.map((c) => ({
+      id: c.id,
+      localId: c.cardId,
+      name: c.cardName,
+      image: c.cardImageUrl ?? undefined,
+    })),
+    [wantedCards]
   );
 
   // Set of owned card IDs for quick lookup (includes locally added)
@@ -81,7 +95,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
   }, [wantedCards]);
 
   // Map card identifier → Supabase row ID for delete
-  // Keyed by both cardId (set view) and row id (all-owned view)
+  // Keyed by both cardId (set view) and row id (all-owned/wanted view)
   const cardIdToRowId = useMemo(
     () => {
       const m = new Map<string, string>();
@@ -89,9 +103,12 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
         m.set(c.cardId, c.id);
         m.set(c.id, c.id);
       }
+      for (const c of wantedCards) {
+        m.set(c.id, c.id);
+      }
       return m;
     },
-    [ownedCards]
+    [ownedCards, wantedCards]
   );
 
   // Map card identifier → full CollectionItem for lightbox editing
@@ -102,9 +119,12 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
         m.set(c.cardId, c);
         m.set(c.id, c);
       }
+      for (const c of wantedCards) {
+        m.set(c.id, c);
+      }
       return m;
     },
-    [ownedCards]
+    [ownedCards, wantedCards]
   );
 
   // Reset local state when set changes
@@ -139,7 +159,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
 
   // Fetch cards when a specific set is selected
   useEffect(() => {
-    if (!selectedSetId || selectedSetId === ALL_OWNED) return;
+    if (!selectedSetId || selectedSetId === ALL_OWNED || selectedSetId === ALL_WANTED) return;
     let cancelled = false;
     setLoadingCards(true);
 
@@ -167,7 +187,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
   );
 
   const selectedSet = sets.find((s) => s.id === selectedSetId);
-  const displayCards = isAllView ? allOwnedSetCards : setCards;
+  const displayCards = isWantedView ? allWantedSetCards : isAllView ? allOwnedSetCards : setCards;
   const ownedCount = displayCards.filter((c) => isOwned(c)).length;
   const pct = displayCards.length > 0 ? Math.round((ownedCount / displayCards.length) * 100) : 0;
 
@@ -307,6 +327,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
           onChange={(val) => setSelectedSetId(val)}
           options={[
             { value: ALL_OWNED, label: `My Collection (${ownedCards.length})` },
+            { value: ALL_WANTED, label: `My Wishlist (${wantedCards.length})` },
             ...sets.map((s) => ({
               value: s.id,
               label: s.cardCount.total > 0 ? `${s.name} (${s.cardCount.total})` : s.name,
@@ -317,13 +338,13 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
       </div>
 
       {/* Stats */}
-      {(isAllView || (selectedSet && !loadingCards)) && (
+      {(isSpecialView || (selectedSet && !loadingCards)) && (
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-zinc-400">
-              {isAllView ? `${displayCards.length} cards` : `${ownedCount} / ${displayCards.length} cards`}
+              {isSpecialView ? `${displayCards.length} cards` : `${ownedCount} / ${displayCards.length} cards`}
             </span>
-            {isAllView && displayCards.length > 0 && (
+            {(isAllView || isWantedView) && displayCards.length > 0 && (
               <button
                 onClick={() => { setSelecting((s) => !s); setSelected(new Set()); }}
                 className={`flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md border transition-colors ${
@@ -338,7 +359,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
                 {selecting ? "Cancel" : "Select"}
               </button>
             )}
-            {!isAllView && (
+            {!isSpecialView && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setSortMode((m) => m === "default" ? "owned" : m === "owned" ? "missing" : "default")}
@@ -360,7 +381,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
               </div>
             )}
           </div>
-          {!isAllView && (
+          {!isSpecialView && (
             <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? "bg-gradient-to-r from-green-500 to-emerald-400" : "bg-gradient-to-r from-indigo-500 to-violet-500"}`}
@@ -373,29 +394,30 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
 
       {/* Cards grid */}
       <div className="p-4">
-        {!isAllView && loadingCards ? (
+        {!isSpecialView && loadingCards ? (
           <SkeletonCardGrid count={12} />
         ) : sortedCards.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-sm text-[var(--muted)]">
-              {isAllView ? "No cards in your collection yet" : "No cards in this set"}
+              {isWantedView ? "No cards in your wishlist yet" : isAllView ? "No cards in your collection yet" : "No cards in this set"}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
             {sortedCards.map((card) => {
               const cardOwned = isOwned(card);
+              const cardWanted = isWantedView || wantedCardIds.has(card.id) || wantedCardIds.has(card.localId);
               return (
                 <LazyCard
                   key={card.id}
                   card={card}
                   game={game}
-                  owned={cardOwned}
-                  wanted={wantedCardIds.has(card.id) || wantedCardIds.has(card.localId)}
-                  onAdd={!cardOwned ? () => addCard(card) : undefined}
-                  onWant={!cardOwned && !wantedCardIds.has(card.id) && !wantedCardIds.has(card.localId) ? () => wantCard(card) : undefined}
+                  owned={isWantedView ? false : cardOwned}
+                  wanted={cardWanted}
+                  onAdd={!cardOwned && !isWantedView ? () => addCard(card) : undefined}
+                  onWant={!cardOwned && !cardWanted ? () => wantCard(card) : undefined}
                   onClick={() => setLightboxCard(card)}
-                  directImage={isAllView}
+                  directImage={isSpecialView}
                   selecting={selecting}
                   selected={selected.has(card.id)}
                   onToggleSelect={() => toggleSelect(card.id)}
