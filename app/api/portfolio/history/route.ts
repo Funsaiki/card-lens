@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[Portfolio] history error:", error);
+    return NextResponse.json({ error: "Failed to fetch portfolio history" }, { status: 500 });
   }
 
   const snapshots: PortfolioSnapshot[] = (data ?? []).map((row) => ({

@@ -123,10 +123,9 @@ export default function CollectionPage() {
       setItems((data.items as RawCollectionItem[]).map(mapItem));
     }
     setLoading(false);
-    // Fetch portfolio data in background
-    fetch("/api/portfolio").then((r) => r.ok ? r.json() : null).then((d) => d && setPortfolio(d));
-    fetch("/api/portfolio/history?days=30").then((r) => r.ok ? r.json() : null).then((d) => d && setHistory(d));
-    // Also trigger a snapshot for today (idempotent via upsert)
+    // Fetch portfolio data in background (errors logged, not shown to user)
+    fetch("/api/portfolio").then((r) => r.ok ? r.json() : null).then((d) => d && setPortfolio(d)).catch(() => {});
+    fetch("/api/portfolio/history?days=30").then((r) => r.ok ? r.json() : null).then((d) => d && setHistory(d)).catch(() => {});
     fetch("/api/portfolio/snapshot", { method: "POST" }).catch(() => {});
   }, []);
 

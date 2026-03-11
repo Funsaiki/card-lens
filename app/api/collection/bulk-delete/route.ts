@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
     .in("id", ids);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[Collection] bulk-delete error:", error);
+    return NextResponse.json({ error: "Failed to delete cards" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, deleted: count ?? ids.length });

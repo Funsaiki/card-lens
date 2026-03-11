@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[RefreshPrices] error:", error);
+    return NextResponse.json({ error: "Failed to refresh prices" }, { status: 500 });
   }
 
   if (!items || items.length === 0) {

@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": res.headers.get("Content-Type") || "image/png",
         "Cache-Control": "public, max-age=86400, immutable",
-        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch {

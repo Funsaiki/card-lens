@@ -19,7 +19,8 @@ export async function GET() {
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[Portfolio] error:", error);
+    return NextResponse.json({ error: "Failed to fetch portfolio" }, { status: 500 });
   }
 
   let totalValueUsd = 0;

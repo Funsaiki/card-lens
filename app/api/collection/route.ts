@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[Collection] GET error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch collection" }, { status: 500 });
   }
 
   return NextResponse.json({
@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
       .eq("id", existing.id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[Collection] update error:", error);
+      return NextResponse.json({ error: "Failed to update card" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error("[Collection] POST error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to add card" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, action: "added", quantity });

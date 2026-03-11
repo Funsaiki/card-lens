@@ -1,6 +1,7 @@
 "use client";
 
 import { SessionCard } from "@/types";
+import { getDisplayPrice } from "@/lib/price-utils";
 import Image from "next/image";
 
 interface SessionHistoryProps {
@@ -68,12 +69,11 @@ export default function SessionHistory({
               </p>
               <div className="flex items-center gap-2 mt-0.5">
                 {(() => {
-                  const p = entry.card.pricing?.tcgplayer?.market ?? entry.card.pricing?.cardmarket?.market ?? entry.card.prices?.market;
-                  if (p == null) return null;
-                  const isEur = entry.card.pricing?.cardmarket?.market != null && entry.card.pricing?.tcgplayer?.market == null;
+                  const dp = getDisplayPrice(entry.card);
+                  if (!dp) return null;
                   return (
-                    <span className="text-xs text-green-400">
-                      {isEur ? `${p.toFixed(2)}€` : `$${p.toFixed(2)}`}
+                    <span className={`text-xs ${dp.isEur ? "text-blue-400" : "text-green-400"}`}>
+                      {dp.text}
                     </span>
                   );
                 })()}

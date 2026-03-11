@@ -53,7 +53,8 @@ export async function PATCH(
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[Collection] PATCH error:", error);
+    return NextResponse.json({ error: "Failed to update card" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
@@ -79,7 +80,8 @@ export async function DELETE(
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[Collection] DELETE error:", error);
+    return NextResponse.json({ error: "Failed to delete card" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
