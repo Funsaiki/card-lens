@@ -84,14 +84,14 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
     <div
       ref={ref}
       onClick={handleClick}
-      className={`group/card relative aspect-[2.5/3.5] bg-zinc-800/50 rounded-lg overflow-hidden border transition-all cursor-pointer ${
+      className={`group/card relative aspect-[2.5/3.5] bg-zinc-800/50 rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-lg ${
         selecting && selected
           ? "border-red-500/60 shadow-sm shadow-red-500/20 ring-2 ring-red-500/30"
           : isOwned
-            ? "border-indigo-500/30 shadow-sm shadow-indigo-500/10"
+            ? "border-indigo-500/30 shadow-sm shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:border-indigo-500/50"
             : isWanted
-              ? "border-amber-500/30 shadow-sm shadow-amber-500/10"
-              : "border-white/[0.04] opacity-35 grayscale hover:opacity-80 hover:grayscale-0"
+              ? "border-amber-500/30 shadow-sm shadow-amber-500/10 hover:shadow-amber-500/20 hover:border-amber-500/50"
+              : "border-white/[0.04] opacity-35 grayscale hover:opacity-80 hover:grayscale-0 hover:shadow-white/10"
       }`}
     >
       {visible && imageUrl ? (
