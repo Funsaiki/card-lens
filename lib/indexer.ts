@@ -107,14 +107,18 @@ async function fetchRiftboundSetCards(setId: string): Promise<SetCard[]> {
 
 // ---------- Hololive ----------
 
-let hololiveDataCache: HololiveRawCard[] | null = null;
+let hololiveDataCache: { data: HololiveRawCard[]; ts: number } | null = null;
+const HOLOLIVE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 async function loadHololiveData(): Promise<HololiveRawCard[]> {
-  if (hololiveDataCache) return hololiveDataCache;
+  if (hololiveDataCache && Date.now() - hololiveDataCache.ts < HOLOLIVE_CACHE_TTL) {
+    return hololiveDataCache.data;
+  }
   const res = await fetch("/api/hololive/cards");
   if (!res.ok) return [];
-  hololiveDataCache = await res.json();
-  return hololiveDataCache!;
+  const data: HololiveRawCard[] = await res.json();
+  hololiveDataCache = { data, ts: Date.now() };
+  return data;
 }
 
 async function fetchHololiveSets(): Promise<GameSet[]> {
@@ -217,49 +221,31 @@ export interface IndexProgress {
   cardName: string;
 }
 
+type ImagePurpose = "display" | "index" | "storage";
+
+/**
+ * Resolve the correct image URL for a card based on purpose:
+ * - display: for rendering in the UI (may proxy for CORS)
+ * - index: for computing embeddings (always proxied for canvas CORS)
+ * - storage: original URL for persisting in the embedding DB
+ */
+function resolveImageUrl(card: SetCard, game: CardGame, purpose: ImagePurpose, resolution: "low" | "high" = "low"): string {
+  if (!card.image) return "";
+  switch (game) {
+    case "onepiece":
+    case "riftbound":
+      return purpose === "index" ? proxyUrl(card.image) : card.image;
+    case "hololive":
+      return purpose === "storage" ? getHololiveImageUrl(card.image) : getHololiveProxiedImageUrl(card);
+    case "pokemon":
+    default:
+      return pokemonImageUrl(card, purpose === "display" ? resolution : "high");
+  }
+}
+
 /** Image URL for display (may go through proxy for CORS). */
 export function getCardImageUrl(card: SetCard, game: CardGame, resolution: "low" | "high" = "low"): string {
-  if (!card.image) return "";
-  switch (game) {
-    case "onepiece":
-    case "riftbound":
-      return card.image;
-    case "hololive":
-      return getHololiveProxiedImageUrl(card);
-    case "pokemon":
-    default:
-      return pokemonImageUrl(card, resolution);
-  }
-}
-
-/** Image URL for indexing (always proxied for CORS). */
-function getIndexImageUrl(card: SetCard, game: CardGame): string {
-  if (!card.image) return "";
-  switch (game) {
-    case "onepiece":
-    case "riftbound":
-      return proxyUrl(card.image);
-    case "hololive":
-      return getHololiveProxiedImageUrl(card);
-    case "pokemon":
-    default:
-      return pokemonImageUrl(card);
-  }
-}
-
-/** Original image URL for storage in embedding DB. */
-function getStorageImageUrl(card: SetCard, game: CardGame): string {
-  if (!card.image) return "";
-  switch (game) {
-    case "onepiece":
-    case "riftbound":
-      return card.image;
-    case "hololive":
-      return getHololiveImageUrl(card.image);
-    case "pokemon":
-    default:
-      return pokemonImageUrl(card);
-  }
+  return resolveImageUrl(card, game, "display", resolution);
 }
 
 /**
@@ -283,7 +269,7 @@ export async function indexSet(
     if (!card.image) continue;
 
     try {
-      const imageUrl = getIndexImageUrl(card, g);
+      const imageUrl = resolveImageUrl(card, g, "index");
       const imageData = await loadImageData(imageUrl);
       const embedding = await computeEmbedding(imageData);
 
@@ -291,7 +277,7 @@ export async function indexSet(
         id: card.id,
         name: card.name,
         embedding,
-        imageUrl: getStorageImageUrl(card, g),
+        imageUrl: resolveImageUrl(card, g, "storage"),
         set: setId,
         game: g,
       });

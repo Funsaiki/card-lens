@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { VALID_GAMES, VALID_CONDITIONS, VALID_VARIANTS } from "@/types";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
   const game = searchParams.get("game");
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const all = searchParams.get("all") === "1";
-  const limit = all ? 10000 : Math.min(Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50), 100);
+  const limit = all ? 2000 : Math.min(Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50), 100);
   const offset = all ? 0 : (page - 1) * limit;
 
   let query = supabase
@@ -62,27 +63,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const { card, quantity = 1, condition = "near_mint", variant = "normal" } = body;
 
   if (!card?.id || !card?.game || !card?.name) {
     return NextResponse.json({ error: "Missing card data" }, { status: 400 });
   }
 
-  const VALID_GAMES = ["pokemon", "onepiece", "riftbound", "hololive"];
-  const VALID_CONDITIONS = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
-  const VALID_VARIANTS = ["normal", "reverse_holo"];
-
-  if (!VALID_GAMES.includes(card.game)) {
+  if (!(VALID_GAMES as readonly string[]).includes(card.game)) {
     return NextResponse.json({ error: "Invalid game" }, { status: 400 });
   }
   if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1 || quantity > 9999) {
     return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
   }
-  if (!VALID_CONDITIONS.includes(condition)) {
+  if (!(VALID_CONDITIONS as readonly string[]).includes(condition)) {
     return NextResponse.json({ error: "Invalid condition" }, { status: 400 });
   }
-  if (!VALID_VARIANTS.includes(variant)) {
+  if (!(VALID_VARIANTS as readonly string[]).includes(variant)) {
     return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
   }
 

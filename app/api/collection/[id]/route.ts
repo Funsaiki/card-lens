@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { VALID_CONDITIONS, VALID_VARIANTS } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,14 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const body = await request.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-
-  const VALID_CONDITIONS = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
-  const VALID_VARIANTS = ["normal", "reverse_holo"];
 
   if (body.quantity !== undefined) {
     if (typeof body.quantity !== "number" || !Number.isInteger(body.quantity) || body.quantity < 1 || body.quantity > 9999) {
@@ -28,13 +32,13 @@ export async function PATCH(
     updates.quantity = body.quantity;
   }
   if (body.condition !== undefined) {
-    if (!VALID_CONDITIONS.includes(body.condition)) {
+    if (!(VALID_CONDITIONS as readonly string[]).includes(body.condition)) {
       return NextResponse.json({ error: "Invalid condition" }, { status: 400 });
     }
     updates.condition = body.condition;
   }
   if (body.variant !== undefined) {
-    if (!VALID_VARIANTS.includes(body.variant)) {
+    if (!(VALID_VARIANTS as readonly string[]).includes(body.variant)) {
       return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
     }
     updates.variant = body.variant;
