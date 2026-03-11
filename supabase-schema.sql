@@ -58,11 +58,12 @@ create table public.collection_items (
   quantity integer default 1 not null check (quantity > 0),
   condition text default 'near_mint',
   variant text default 'normal',
+  status text not null default 'owned' check (status in ('owned', 'wanted')),
   notes text,
   added_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
 
-  unique(user_id, card_id, game, variant)
+  unique(user_id, card_id, game, variant, status)
 );
 
 alter table public.collection_items enable row level security;

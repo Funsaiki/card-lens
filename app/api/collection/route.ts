@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { VALID_GAMES, VALID_CONDITIONS, VALID_VARIANTS, MAX_QUANTITY } from "@/types";
+import { VALID_GAMES, VALID_CONDITIONS, VALID_VARIANTS, VALID_STATUSES, MAX_QUANTITY } from "@/types";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
 
   if (game) {
     query = query.eq("game", game);
+  }
+
+  const status = searchParams.get("status");
+  if (status && (VALID_STATUSES as readonly string[]).includes(status)) {
+    query = query.eq("status", status);
   }
 
   const { data, count, error } = await query;
@@ -70,7 +75,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  const { card, quantity = 1, condition = "near_mint", variant = "normal" } = body;
+  const { card, quantity = 1, condition = "near_mint", variant = "normal", status = "owned" } = body;
 
   if (!card?.id || !card?.game || !card?.name) {
     return NextResponse.json({ error: "Missing card data" }, { status: 400 });
@@ -88,14 +93,19 @@ export async function POST(request: NextRequest) {
   if (!(VALID_VARIANTS as readonly string[]).includes(variant)) {
     return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
   }
+  if (!(VALID_STATUSES as readonly string[]).includes(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
 
-  // Check if card already exists (same card + game + variant)
+  // Check if card already exists (same card + game + variant + status)
   let existingQuery = supabase
     .from("collection_items")
     .select("id, quantity")
     .eq("user_id", user.id)
     .eq("card_id", card.id)
     .eq("game", card.game);
+
+  existingQuery = existingQuery.eq("status", status);
 
   if (variant === "normal") {
     // Match both null and "normal" for backwards compatibility
@@ -141,6 +151,7 @@ export async function POST(request: NextRequest) {
     quantity,
     condition,
     variant,
+    status,
   });
 
   if (error) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { VALID_CONDITIONS, VALID_VARIANTS, MAX_QUANTITY } from "@/types";
+import { VALID_CONDITIONS, VALID_VARIANTS, VALID_STATUSES, MAX_QUANTITY } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +42,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
     }
     updates.variant = body.variant;
+  }
+  if (body.status !== undefined) {
+    if (!(VALID_STATUSES as readonly string[]).includes(body.status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+    updates.status = body.status;
   }
   if (body.notes !== undefined) {
     if (typeof body.notes !== "string" || body.notes.length > 1000) {

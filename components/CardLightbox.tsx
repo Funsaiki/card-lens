@@ -6,6 +6,7 @@ import { CardGame, CollectionItem, CardCondition, CardVariant, CONDITION_LABELS,
 import Spinner from "@/components/ui/Spinner";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { getCardImageUrl, SetCard } from "@/lib/indexer";
+import { getBuyLinks } from "@/lib/buy-links";
 
 const CONDITIONS: CardCondition[] = ["mint", "near_mint", "lightly_played", "moderately_played", "heavily_played", "damaged"];
 const VARIANTS: CardVariant[] = ["normal", "reverse_holo"];
@@ -124,6 +125,29 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
             <p className="text-sm font-medium text-zinc-200">{card.name}</p>
             <p className="text-[11px] text-[var(--muted)]">{card.id}</p>
           </div>
+
+          {/* Buy links */}
+          {(() => {
+            const links = getBuyLinks(collectionItem?.cardData ?? { id: card.id, name: card.name, game, set: "", rarity: "", imageUrl: "", details: {} });
+            return (links.tcgplayer || links.cardmarket) ? (
+              <div className="flex gap-2">
+                {links.tcgplayer && (
+                  <a href={links.tcgplayer} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-green-400 bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 rounded-lg transition-colors">
+                    TCGPlayer
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </a>
+                )}
+                {links.cardmarket && (
+                  <a href={links.cardmarket} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg transition-colors">
+                    Cardmarket
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </a>
+                )}
+              </div>
+            ) : null;
+          })()}
 
           {isOwned ? (
             <>

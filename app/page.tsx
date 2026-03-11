@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+
+export const metadata: Metadata = {
+  title: "Card Lens - Recognize Trading Cards Instantly",
+  description: "Scan Pokemon, One Piece, Riftbound, and Hololive cards with your camera. Get instant prices, rarity info, and build your collection for free.",
+  alternates: { canonical: "/" },
+};
 
 const GAMES = [
   {
@@ -102,9 +109,34 @@ const FEATURES = [
   },
 ];
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Card Lens",
+  description: "Recognize trading cards in real-time using your camera. Get instant prices, rarity, and details.",
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Web",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  featureList: [
+    "Real-time card recognition",
+    "Pokemon TCG support",
+    "One Piece TCG support",
+    "Riftbound support",
+    "Hololive OCG support",
+    "Price lookup",
+    "Collection tracking",
+    "Wishlist management",
+    "CSV export",
+  ],
+};
+
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <NavBar />
 
       {/* Hero */}

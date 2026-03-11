@@ -5,6 +5,7 @@ import Image from "next/image";
 import PriceChart from "./PriceChart";
 import AddToCollectionButton from "./AddToCollectionButton";
 import ProgressBar from "@/components/ui/ProgressBar";
+import { getBuyLinks } from "@/lib/buy-links";
 
 interface CardInfoProps {
   card: CardData | null;
@@ -83,6 +84,41 @@ export default function CardInfo({ card, confidence }: CardInfoProps) {
           <p className="text-zinc-200 truncate">{card.rarity}</p>
         </div>
       </div>
+
+      {/* Buy links */}
+      {(() => {
+        const links = getBuyLinks(card);
+        return (links.tcgplayer || links.cardmarket) ? (
+          <div className="flex gap-2">
+            {links.tcgplayer && (
+              <a
+                href={links.tcgplayer}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-green-400 bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 rounded-lg transition-colors"
+              >
+                TCGPlayer
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            )}
+            {links.cardmarket && (
+              <a
+                href={links.cardmarket}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg transition-colors"
+              >
+                Cardmarket
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            )}
+          </div>
+        ) : null;
+      })()}
 
       {/* Prices */}
       {card.pricing && <PriceChart pricing={card.pricing} />}
