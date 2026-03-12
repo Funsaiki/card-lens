@@ -163,6 +163,28 @@ export interface CollectionStats {
   conditionBreakdown: { condition: CardCondition; count: number }[];
 }
 
+// ---------- User Profile ----------
+
+export interface UserProfile {
+  username: string | null;
+  collectionPublic: boolean;
+}
+
+// ---------- Import ----------
+
+export interface ImportItem {
+  cardId: string;
+  game: CardGame;
+  cardName: string;
+  cardSet: string;
+  cardRarity: string;
+  cardImageUrl: string;
+  quantity: number;
+  condition: CardCondition;
+  variant: CardVariant;
+  status: CollectionStatus;
+}
+
 export interface CardGainLoss {
   cardId: string;
   name: string;

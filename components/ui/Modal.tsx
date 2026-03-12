@@ -5,9 +5,9 @@ import { ReactNode } from "react";
 export default function Modal({ children, onClose, maxWidth = "sm" }: {
   children: ReactNode;
   onClose?: () => void;
-  maxWidth?: "sm" | "md";
+  maxWidth?: "sm" | "md" | "lg";
 }) {
-  const widths = { sm: "max-w-sm", md: "max-w-md" };
+  const widths = { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg" };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

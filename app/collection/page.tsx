@@ -15,6 +15,8 @@ import StatsPanel from "@/components/StatsPanel";
 import { SkeletonDashboard, SkeletonStats } from "@/components/Skeleton";
 import Spinner from "@/components/ui/Spinner";
 import { exportCollectionXlsx } from "@/lib/csv-export";
+import ImportModal from "@/components/ImportModal";
+import CollectionVisibilityToggle from "@/components/CollectionVisibilityToggle";
 
 const GAMES: { id: CardGame; color: string; gradient: string; icon: React.ReactNode }[] = [
   {
@@ -114,6 +116,7 @@ export default function CollectionPage() {
   const [stats, setStats] = useState<CollectionStats | null>(null);
   const [dashTab, setDashTab] = useState<"overview" | "stats">("overview");
   const [refreshing, setRefreshing] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const openGame = useCallback((game: CardGame, setId?: string | null) => {
     setGameView({ game, setId: setId ?? null });
@@ -269,6 +272,15 @@ export default function CollectionPage() {
                     </svg>
                     Export Excel
                   </button>
+                  <button
+                    onClick={() => setShowImport(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-zinc-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.12] rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Import
+                  </button>
                 </div>
               </div>
             )}
@@ -294,6 +306,11 @@ export default function CollectionPage() {
                 />
               </div>
             )}
+
+            {/* Collection visibility */}
+            <div className="mb-4">
+              <CollectionVisibilityToggle />
+            </div>
 
             {/* Tab bar: Overview / Statistics */}
             {totalCards > 0 && (
@@ -464,12 +481,20 @@ export default function CollectionPage() {
                 </svg>
                 <p className="text-sm text-zinc-400 mb-1">No cards yet</p>
                 <p className="text-xs text-[var(--muted)] mb-4">Scan or search cards to start your collection</p>
-                <Link
-                  href="/"
-                  className="inline-block px-4 py-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
-                >
-                  Start scanning
-                </Link>
+                <div className="flex justify-center gap-3">
+                  <Link
+                    href="/"
+                    className="inline-block px-4 py-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                  >
+                    Start scanning
+                  </Link>
+                  <button
+                    onClick={() => setShowImport(true)}
+                    className="px-4 py-2 text-xs text-zinc-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-lg transition-colors"
+                  >
+                    Import collection
+                  </button>
+                </div>
               </div>
             )}
           </>
@@ -492,6 +517,12 @@ export default function CollectionPage() {
           </div>
         )}
       </div>
+
+      <ImportModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImported={fetchCollection}
+      />
     </div>
   );
 }

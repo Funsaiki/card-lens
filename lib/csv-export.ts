@@ -2,12 +2,13 @@ import * as XLSX from "xlsx";
 import { CollectionItem, GAME_LABELS, CONDITION_LABELS, VARIANT_LABELS, CardGame } from "@/types";
 import { getMarketPriceUsd } from "./price-utils";
 
-const HEADERS = ["Card Name", "Set", "Rarity", "Condition", "Variant", "Status", "Quantity", "Market Price (USD)", "Total Value (USD)"];
+const HEADERS = ["Card ID", "Card Name", "Set", "Rarity", "Condition", "Variant", "Status", "Quantity", "Market Price (USD)", "Total Value (USD)"];
 
 function itemToRow(item: CollectionItem): (string | number | null)[] {
   const price = getMarketPriceUsd(item.cardData);
   const total = price != null ? price * item.quantity : null;
   return [
+    item.cardId,
     item.cardName,
     item.cardSet ?? "",
     item.cardRarity ?? "",
