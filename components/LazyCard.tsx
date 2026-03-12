@@ -11,13 +11,14 @@ const PLACEHOLDER_BG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/
 type AddState = "idle" | "adding" | "added";
 type WantState = "idle" | "wanting" | "wanted";
 
-export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onClick, directImage, selecting, selected, onToggleSelect }: {
+export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onRemoveWant, onClick, directImage, selecting, selected, onToggleSelect }: {
   card: SetCard;
   game: CardGame;
   owned: boolean;
   wanted?: boolean;
   onAdd?: () => Promise<void>;
   onWant?: () => Promise<void>;
+  onRemoveWant?: () => Promise<void>;
   onClick?: () => void;
   directImage?: boolean;
   selecting?: boolean;
@@ -28,6 +29,7 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
   const [visible, setVisible] = useState(false);
   const [addState, setAddState] = useState<AddState>("idle");
   const [wantState, setWantState] = useState<WantState>("idle");
+  const [removingWant, setRemovingWant] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -71,6 +73,19 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
     }
   };
 
+  const handleRemoveWant = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onRemoveWant || removingWant) return;
+    setRemovingWant(true);
+    try {
+      await onRemoveWant();
+      toast.success(`${card.name} removed from wishlist`);
+    } catch {
+      toast.error("Failed to remove from wishlist");
+    }
+    setRemovingWant(false);
+  };
+
   const handleClick = () => {
     if (selecting && onToggleSelect) {
       onToggleSelect();
@@ -112,11 +127,33 @@ export default function LazyCard({ card, game, owned, wanted, onAdd, onWant, onC
       )}
 
       {isWanted && !selecting && (
-        <div className="absolute top-1 right-1 z-10 p-0.5 rounded-full bg-black/50">
-          <svg className="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-        </div>
+        onRemoveWant ? (
+          <button
+            onClick={handleRemoveWant}
+            disabled={removingWant}
+            className="group/unwant absolute top-1 right-1 z-10 p-1 rounded-full bg-black/50 hover:bg-red-500/80 transition-colors"
+            title="Remove from wishlist"
+          >
+            {removingWant ? (
+              <Spinner size="sm" color="white" />
+            ) : (
+              <>
+                <svg className="w-3 h-3 text-amber-400 group-hover/unwant:hidden" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+                <svg className="w-3 h-3 text-white hidden group-hover/unwant:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </>
+            )}
+          </button>
+        ) : (
+          <div className="absolute top-1 right-1 z-10 p-1 rounded-full bg-black/50">
+            <svg className="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+          </div>
+        )
       )}
 
       {selecting && (

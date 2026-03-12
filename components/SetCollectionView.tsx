@@ -90,6 +90,16 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
     return ids;
   }, [wantedCards]);
 
+  // Map wanted card identifier → Supabase row ID for unwant
+  const wantedIdToRowId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of wantedCards) {
+      m.set(c.cardId, c.id);
+      m.set(c.id, c.id);
+    }
+    return m;
+  }, [wantedCards]);
+
   // Map card identifier → Supabase row ID for delete
   // Keyed by both cardId (set view) and row id (all-owned/wanted view)
   const cardIdToRowId = useMemo(
@@ -240,6 +250,14 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
     if (!res.ok) throw new Error("Failed to add to wishlist");
     onCardAdded?.();
   }, [game, selectedSet?.name, selectedSetId, onCardAdded]);
+
+  const removeWant = useCallback(async (card: SetCard) => {
+    const rowId = wantedIdToRowId.get(card.id) ?? wantedIdToRowId.get(card.localId);
+    if (!rowId) return;
+    const res = await fetch(`/api/collection/${rowId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to remove from wishlist");
+    onCardAdded?.();
+  }, [wantedIdToRowId, onCardAdded]);
 
   const removeCard = useCallback(async (card: SetCard) => {
     const rowId = getRowId(card);
@@ -412,6 +430,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
                   wanted={cardWanted}
                   onAdd={!cardOwned && !isWantedView ? () => addCard(card) : undefined}
                   onWant={!cardOwned && !cardWanted ? () => wantCard(card) : undefined}
+                  onRemoveWant={cardWanted && !isWantedView ? () => removeWant(card) : undefined}
                   onClick={() => setLightboxCard(card)}
                   directImage={isSpecialView}
                   selecting={selecting}
