@@ -430,7 +430,7 @@ export default function SetCollectionView({ game, ownedCards, wantedCards = [], 
                   wanted={cardWanted}
                   onAdd={!cardOwned && !isWantedView ? () => addCard(card) : undefined}
                   onWant={!cardOwned && !cardWanted ? () => wantCard(card) : undefined}
-                  onRemoveWant={cardWanted && !isWantedView ? () => removeWant(card) : undefined}
+                  onRemoveWant={cardWanted ? () => removeWant(card) : undefined}
                   onClick={() => setLightboxCard(card)}
                   directImage={isSpecialView}
                   selecting={selecting}
