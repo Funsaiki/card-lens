@@ -239,7 +239,7 @@ function resolveImageUrl(card: SetCard, game: CardGame, purpose: ImagePurpose, r
       return purpose === "storage" ? getHololiveImageUrl(card.image) : getHololiveProxiedImageUrl(card);
     case "pokemon":
     default:
-      return pokemonImageUrl(card, purpose === "display" ? resolution : "high");
+      return pokemonImageUrl(card, purpose === "display" ? resolution : "low");
   }
 }
 
@@ -269,6 +269,7 @@ export function displayStoredImageUrl(storedUrl: string | undefined): string {
 
 /**
  * Index all cards in a set by computing their MobileNet embeddings.
+ * Uses a prefetch pipeline: fetches images ahead while computing embeddings.
  * Calls onProgress for each card processed.
  * Returns the embedding database entries.
  */
@@ -281,15 +282,42 @@ export async function indexSet(
   const cards = await fetchSetCards(setId, g);
   const entries: CardEmbeddingEntry[] = [];
 
+  const PREFETCH_AHEAD = 4;
+  const prefetchCache = new Map<number, Promise<ImageData | null>>();
+
+  // Start prefetching an image (returns cached promise if already started)
+  function prefetch(idx: number): Promise<ImageData | null> {
+    if (prefetchCache.has(idx)) return prefetchCache.get(idx)!;
+    const card = cards[idx];
+    if (!card?.image) {
+      const p = Promise.resolve(null);
+      prefetchCache.set(idx, p);
+      return p;
+    }
+    const imageUrl = resolveImageUrl(card, g, "index");
+    const p = loadImageData(imageUrl).catch(() => null);
+    prefetchCache.set(idx, p);
+    return p;
+  }
+
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
     onProgress?.({ current: i + 1, total: cards.length, cardName: card.name });
 
+    // Kick off prefetches for upcoming cards
+    for (let j = i; j < Math.min(i + PREFETCH_AHEAD, cards.length); j++) {
+      prefetch(j);
+    }
+
     if (!card.image) continue;
 
     try {
-      const imageUrl = resolveImageUrl(card, g, "index");
-      const imageData = await loadImageData(imageUrl);
+      const imageData = await prefetch(i);
+      if (!imageData) continue;
+
+      // Free the cache entry to avoid holding all images in memory
+      prefetchCache.delete(i);
+
       const embedding = await computeEmbedding(imageData);
 
       entries.push({
