@@ -93,7 +93,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col items-center gap-4 max-w-sm w-full mx-4 max-h-[90vh] overflow-y-auto"
+        className="relative flex flex-col items-center gap-4 max-w-sm w-full mx-4 max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -116,7 +116,7 @@ export default function CardLightbox({ card, game, owned, collectionItem, onAdd,
           )}
         </div>
 
-        <div className="w-full bg-[var(--surface-light)] border border-white/[0.08] rounded-xl p-3 space-y-3">
+        <div className="w-full bg-[var(--surface-light)] border border-white/[0.08] rounded-xl p-3 space-y-3 overflow-y-auto min-h-0">
           <div>
             <p className="text-sm font-medium text-zinc-200">{card.name}</p>
             <p className="text-[11px] text-[var(--muted)]">{card.id}</p>
