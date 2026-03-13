@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { captureFrame, extractCardRegion } from "@/lib/recognition";
+import { captureFrame, extractCardRegion as extractCardRegionFallback } from "@/lib/recognition";
 import {
   computeEmbedding,
   cosineSimilarity,
@@ -10,6 +10,12 @@ import {
 import { searchCards, fetchCardById } from "@/lib/cards-api";
 import { loadAllEmbeddings, saveEmbeddings, deleteSetEmbeddings } from "@/lib/embedding-store";
 import { CardData, CardGame, SessionCard } from "@/types";
+import {
+  initCardDetect,
+  detectCard,
+  extractCardRegion as extractCardRegionWasm,
+  isCardDetectReady,
+} from "@/lib/card-detect";
 
 interface UseCardRecognitionOptions {
   game: CardGame;
@@ -26,6 +32,10 @@ const VOTE_WINDOW = 5;
 // Minimum cosine similarity to consider a match (0-1)
 const MATCH_THRESHOLD = 0.5;
 
+// Card output dimensions for perspective-corrected extraction
+const CARD_OUT_W = 224;
+const CARD_OUT_H = 312; // ~63:88 aspect ratio
+
 export function useCardRecognition({
   game,
   videoRef,
@@ -40,6 +50,7 @@ export function useCardRecognition({
   const [embeddingDatabase, setEmbeddingDatabase] = useState<CardEmbeddingEntry[]>([]);
   const [debugInfo, setDebugInfo] = useState("");
   const [dbLoading, setDbLoading] = useState(true);
+  const [wasmReady, setWasmReady] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -59,6 +70,18 @@ export function useCardRecognition({
     if (!canvasRef.current) {
       canvasRef.current = document.createElement("canvas");
     }
+  }, []);
+
+  // Initialize WASM card detection module
+  useEffect(() => {
+    initCardDetect()
+      .then(() => {
+        setWasmReady(true);
+        console.log("[Recognition] WASM card detection ready");
+      })
+      .catch((err) => {
+        console.warn("[Recognition] WASM card detection unavailable, using fallback:", err);
+      });
   }, []);
 
   // Load persisted embeddings from IndexedDB on mount
@@ -127,7 +150,23 @@ export function useCardRecognition({
       const frame = captureFrame(video, canvas);
       if (!frame) return;
 
-      const cardRegion = extractCardRegion(frame, frameHeightRef.current);
+      // Try WASM card detection first, fall back to center crop
+      let cardRegion: ImageData;
+      let wasDetected = false;
+
+      if (isCardDetectReady()) {
+        const detection = detectCard(frame);
+        if (detection.found) {
+          cardRegion = extractCardRegionWasm(frame, detection.corners, CARD_OUT_W, CARD_OUT_H);
+          wasDetected = true;
+        } else {
+          // Fallback: center crop
+          cardRegion = extractCardRegionFallback(frame, frameHeightRef.current);
+        }
+      } else {
+        cardRegion = extractCardRegionFallback(frame, frameHeightRef.current);
+      }
+
       const embedding = await computeEmbedding(cardRegion);
 
       // Single pass: find best match (no threshold) for both debug and detection
@@ -154,8 +193,9 @@ export function useCardRecognition({
       if (isAboveThreshold) {
         const conf = Math.round(bestSimilarity * 100);
         const votes = voteBufferRef.current.filter((v) => v === bestMatch!.id).length;
+        const detectLabel = wasDetected ? " [WASM]" : "";
         setDebugInfo(
-          `${bestMatch!.name} sim=${bestSimilarity.toFixed(3)} (${conf}%) [${votes}/${VOTES_NEEDED} votes]`
+          `${bestMatch!.name} sim=${bestSimilarity.toFixed(3)} (${conf}%) [${votes}/${VOTES_NEEDED} votes]${detectLabel}`
         );
 
         const winner = getVoteWinner(voteBufferRef.current);
@@ -164,7 +204,7 @@ export function useCardRecognition({
           const winnerEntry = db.find((e) => e.id === winner);
           if (!winnerEntry) return;
 
-          console.log(`[Recognition] CONFIRMED: ${winnerEntry.name} (sim=${bestSimilarity.toFixed(3)})`);
+          console.log(`[Recognition] CONFIRMED: ${winnerEntry.name} (sim=${bestSimilarity.toFixed(3)})${detectLabel}`);
           setConfidence(conf);
 
           // Fetch full card data, fallback to embedding entry info
@@ -262,6 +302,7 @@ export function useCardRecognition({
     debugInfo,
     embeddingDatabase,
     dbLoading,
+    wasmReady,
     searchAndIndex,
     addToHistory,
     addToEmbeddingDatabase,

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:lan": "next dev --experimental-https -H 0.0.0.0",
+    "build:wasm": "cd wasm-card-detect && wasm-pack build --target web --out-dir ../lib/wasm-card-detect",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

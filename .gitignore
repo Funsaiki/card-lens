@@ -46,3 +46,6 @@ certificates
 
 # claude
 .claude/.env
+
+# rust/wasm build artifacts
+/wasm-card-detect/target
